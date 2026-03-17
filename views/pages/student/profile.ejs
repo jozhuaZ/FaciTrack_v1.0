@@ -1,0 +1,171 @@
+<%- include('../../partials/header') %>
+
+<link rel="stylesheet" href="/css/student/profile.css?v=<%= Date.now() %>">
+<style>
+    /* Override global overflow for profile page */
+    html, body { 
+        overflow: auto !important; 
+        height: auto !important; 
+        min-height: 100vh !important;
+    }
+    main {
+        overflow: visible !important;
+        min-height: auto !important;
+    }
+</style>
+
+<main class="prof-main">
+    <div class="prof-container">
+
+        <!-- Enhanced Back Button with Breadcrumb -->
+        <div class="breadcrumb-nav">
+            <a href="/student/dashboard" class="btn-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Back to Dashboard
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">Faculty Profile</span>
+        </div>
+
+        <div class="prof-layout">
+
+            <!-- Sidebar -->
+            <aside class="prof-sidebar">
+                <div class="sidebar-avatar"><%= faculty.name.split(' ').map(n => n[0]).join('') %></div>
+                <h2 class="sidebar-name"><%= faculty.name %></h2>
+                <p class="sidebar-position"><%= faculty.position %></p>
+                <span class="status-badge <%= faculty.status %>">
+                    <span class="status-dot"></span>
+                    <%= faculty.status === 'busy' ? 'In Consultation' : faculty.status.charAt(0).toUpperCase() + faculty.status.slice(1) %>
+                </span>
+
+                <div class="sidebar-divider"></div>
+
+                <ul class="sidebar-meta">
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        <span><%= faculty.department %></span>
+                    </li>
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span><%= faculty.specialization %></span>
+                    </li>
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <span><%= faculty.email %></span>
+                    </li>
+                    <li class="office-location-highlight">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                        <span><%= faculty.officeRoom %></span>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- Main Content -->
+            <div class="prof-content">
+                <div class="slots-card">
+                    <div class="slots-card-header">
+                        <h3 class="slots-title">Consultation Schedule</h3>
+                        <p class="slots-subtitle">Select an available time slot to proceed with booking</p>
+                    </div>
+
+                    <div class="slots-list">
+                        <% faculty.consultationSlots.forEach((slot, index) => { %>
+                        <label class="slot-item <%= slot.status %>" <%= slot.status === 'full' ? '' : '' %>>
+                            <% if (slot.status === 'open') { %>
+                            <input type="radio" name="selectedSlot" value="<%= index %>" class="slot-radio">
+                            <% } %>
+                            <div class="slot-info">
+                                <span class="slot-day"><%= slot.day %></span>
+                                <span class="slot-date"><%= slot.date || 'March 24, 2026' %></span>
+                                <span class="slot-time">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    <%= slot.time %>
+                                </span>
+                                <span class="slot-location">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    <%= faculty.officeRoom %>
+                                </span>
+                            </div>
+                            <span class="slot-badge <%= slot.status %>">
+                                <% if (slot.status === 'open') { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Available
+                                <% } else { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    Full
+                                <% } %>
+                            </span>
+                        </label>
+                        <% }); %>
+                    </div>
+
+                    <!-- Book Action -->
+                    <div class="book-action">
+                        <% const hasOpen = faculty.consultationSlots.some(s => s.status === 'open'); %>
+                        <% if (faculty.status !== 'away' && hasOpen) { %>
+                        <a href="/student/dashboard/<%= faculty.id %>/book" class="btn-book">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Book an Appointment
+                        </a>
+                        <p class="book-helper-text">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            You'll be able to specify your consultation topic in the next step
+                        </p>
+                        <% } else { %>
+                        <span class="btn-book disabled">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            No Available Slots
+                        </span>
+                        <p class="book-note">Next available: <%= faculty.nextAvailable %></p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>

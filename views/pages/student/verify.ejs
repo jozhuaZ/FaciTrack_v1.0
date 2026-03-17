@@ -1,0 +1,85 @@
+<%- include('../../partials/header') %>
+
+<link rel="stylesheet" href="/css/student/verify.css?v=<%= Date.now() %>">
+
+<main class="verify-main">
+    <a href="/roles" class="back-btn">&#8592; Back to Roles</a>
+    
+    <div class="verify-container">
+        <div class="verify-card">
+            <div class="verify-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            
+            <div class="verify-header">
+                <h1 class="verify-title">Student Verification</h1>
+                <p class="verify-description">
+                    Enter your CSPC email to view faculty availability and book appointments.
+                </p>
+            </div>
+            
+            <% if (error) { %>
+                <div class="alert alert-error">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span><%= error %></span>
+                </div>
+            <% } %>
+            
+            <form action="/student/verify" method="POST" class="verify-form">
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        CSPC Email Address
+                        <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="form-input" 
+                            placeholder="student@my.cspc.edu.ph"
+                            required
+                            pattern="[a-zA-Z0-9._%+\-]+@my\.cspc\.edu\.ph$"
+                            title="Please use your CSPC email address (e.g., student@my.cspc.edu.ph)"
+                            autofocus
+                        >
+                    </div>
+                    <small class="form-hint">Use your official CSPC student email</small>
+                </div>
+                
+                <button type="submit" class="btn-verify">
+                    <span>Continue</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+            </form>
+            
+            <div class="verify-footer">
+                <div class="info-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <p>For testing: student@my.cspc.edu.ph</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>

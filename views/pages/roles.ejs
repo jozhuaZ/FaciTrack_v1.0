@@ -1,0 +1,37 @@
+<%- include('../partials/header') %>
+
+<link rel="stylesheet" href="/css/roles.css?v=<%= Date.now() %>">
+
+<main class="roles-main">
+    <a href="/" class="back-btn">&#8592; Back</a>
+    <div class="roles-grid">
+
+        <a href="/student/verify" class="role-card">
+            <div class="role-icon">S</div>
+            <h3 class="role-title">Students</h3>
+            <p class="role-description">View faculty availability and book consultation appointments.</p>
+        </a>
+
+        <a href="/instructor/login" class="role-card">
+            <div class="role-icon">I</div>
+            <h3 class="role-title">Instructors</h3>
+            <p class="role-description">Manage consultation schedules and approve appointments.</p>
+        </a>
+
+        <a href="/dean/login" class="role-card">
+            <div class="role-icon">D</div>
+            <h3 class="role-title">Dean</h3>
+            <p class="role-description">Monitor faculty presence and review activity logs.</p>
+        </a>
+
+        <a href="/admin/login" class="role-card">
+            <div class="role-icon">A</div>
+            <h3 class="role-title">Administrator</h3>
+            <p class="role-description">Manage faculty profiles and system configuration.</p>
+        </a>
+
+    </div>
+</main>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/script') %>

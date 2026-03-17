@@ -1,0 +1,240 @@
+<%- include('../../partials/header') %>
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+<style>
+    html, body { overflow: hidden !important; height: 100vh !important; }
+    body { display: flex; flex-direction: column; }
+    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+</style>
+
+<div class="instructor-layout">
+    <%- include('../../partials/instructor-sidebar', { activePage: 'settings', pendingCount: pendingCount }) %>
+
+    <main class="instructor-main">
+        <div class="main-container">
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Settings</h1>
+                    <p class="page-subtitle">Manage your profile, availability, and notification preferences</p>
+                </div>
+            </div>
+
+            <div class="settings-grid">
+
+                <!-- Profile Settings -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Profile Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="settings-profile-top">
+                        <div class="profile-avatar-mini" style="width:64px;height:64px;font-size:1.25rem;position:relative;overflow:hidden;cursor:pointer;" id="settingsAvatar">
+                            <% if (instructor.profilePhoto) { %>
+                                <img src="<%= instructor.profilePhoto %>" alt="<%= instructor.name %>" class="avatar-img">
+                            <% } else { %>
+                                <span class="avatar-initials" style="font-size:1.25rem;"><%= instructor.name.split(' ').map(n=>n[0]).join('') %></span>
+                            <% } %>
+                            <label class="avatar-upload-overlay" title="Change photo">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                <input type="file" id="settingsAvatarInput" accept="image/*" style="display:none;">
+                            </label>
+                        </div>
+                            <div>
+                                <p class="settings-name"><%= instructor.name %></p>
+                                <p class="settings-email"><%= instructor.email %></p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="modal-label">Full Name</label>
+                            <input type="text" class="modal-input" value="<%= instructor.name %>">
+                        </div>
+                        <div class="form-group">
+                            <label class="modal-label">Email</label>
+                            <input type="email" class="modal-input" value="<%= instructor.email %>">
+                        </div>
+                        <div class="form-group">
+                            <label class="modal-label">Position / Title</label>
+                            <input type="text" class="modal-input" value="<%= instructor.position %>">
+                        </div>
+                        <div class="form-group">
+                            <label class="modal-label">Department</label>
+                            <input type="text" class="modal-input" value="<%= instructor.department %>">
+                        </div>
+                        <div class="form-group">
+                            <label class="modal-label">Office / Room</label>
+                            <input type="text" class="modal-input" value="<%= instructor.officeRoom %>">
+                        </div>
+                        <button class="btn-save-settings" id="btnSaveProfile">Save Changes</button>
+                    </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+                    <!-- BLE Status Override -->
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3 class="card-title">BLE Status Override</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="settings-description">Manually override your BLE SmartTag status. Overrides are logged for admin review.</p>
+                            <div class="ble-override-options">
+                                <label class="ble-option-label <%= instructor.bleStatus === 'in-room' ? 'selected' : '' %>" id="optInRoom">
+                                    <input type="radio" name="bleOverride" value="in-room" <%= instructor.bleStatus === 'in-room' ? 'checked' : '' %>>
+                                    <span class="ble-dot-mini" style="background:#16a34a;width:10px;height:10px;border-radius:50%;display:inline-block;"></span>
+                                    In Room
+                                </label>
+                                <label class="ble-option-label <%= instructor.bleStatus === 'out-of-room' ? 'selected' : '' %>" id="optOutRoom">
+                                    <input type="radio" name="bleOverride" value="out-of-room" <%= instructor.bleStatus === 'out-of-room' ? 'checked' : '' %>>
+                                    <span class="ble-dot-mini" style="background:#6b7280;width:10px;height:10px;border-radius:50%;display:inline-block;"></span>
+                                    Out of Room
+                                </label>
+                            </div>
+                            <button class="btn-save-settings" id="btnSaveBLE">Apply Override</button>
+                        </div>
+                    </div>
+
+                    <!-- Notification Preferences -->
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Notification Preferences</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="settings-toggle-list">
+                                <div class="settings-toggle-row">
+                                    <div>
+                                        <p class="toggle-label">New Appointment Requests</p>
+                                        <p class="toggle-desc">Get notified when a student books a consultation</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="settings-toggle-row">
+                                    <div>
+                                        <p class="toggle-label">Appointment Cancellations</p>
+                                        <p class="toggle-desc">Get notified when a student cancels</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="settings-toggle-row">
+                                    <div>
+                                        <p class="toggle-label">Consultation Reminders</p>
+                                        <p class="toggle-desc">Reminders 30 minutes before scheduled consultations</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="settings-toggle-row">
+                                    <div>
+                                        <p class="toggle-label">BLE Absence Alerts</p>
+                                        <p class="toggle-desc">Alert when presence not detected during scheduled hours</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="btn-save-settings" id="btnSaveNotifs">Save Preferences</button>
+                        </div>
+                    </div>
+
+                    <!-- Security -->
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Security</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="modal-label">Current Password</label>
+                                <input type="password" class="modal-input" placeholder="Enter current password">
+                            </div>
+                            <div class="form-group">
+                                <label class="modal-label">New Password</label>
+                                <input type="password" class="modal-input" placeholder="Enter new password">
+                            </div>
+                            <div class="form-group">
+                                <label class="modal-label">Confirm New Password</label>
+                                <input type="password" class="modal-input" placeholder="Confirm new password">
+                            </div>
+                            <button class="btn-save-settings" id="btnChangePassword">Update Password</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>
+<script>
+function showToast(type, title, message) {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<div class="toast-content"><p class="toast-title">${title}</p><p class="toast-message">${message}</p></div>`;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
+}
+
+document.getElementById('btnSaveProfile').addEventListener('click', () => showToast('success', 'Saved', 'Profile information updated.'));
+document.getElementById('btnSaveBLE').addEventListener('click', () => {
+    const val = document.querySelector('input[name="bleOverride"]:checked').value;
+    showToast('success', 'Override Applied', `Status manually set to "${val === 'in-room' ? 'In Room' : 'Out of Room'}". This override has been logged.`);
+});
+document.getElementById('btnSaveNotifs').addEventListener('click', () => showToast('success', 'Saved', 'Notification preferences updated.'));
+document.getElementById('btnChangePassword').addEventListener('click', () => showToast('success', 'Updated', 'Password changed successfully.'));
+
+// Toggle visual selection for BLE options
+document.querySelectorAll('input[name="bleOverride"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('.ble-option-label').forEach(l => l.classList.remove('selected'));
+        this.closest('.ble-option-label').classList.add('selected');
+    });
+});
+
+// Settings page avatar upload (syncs with sidebar)
+const settingsInput = document.getElementById('settingsAvatarInput');
+const settingsAvatar = document.getElementById('settingsAvatar');
+if (settingsInput && settingsAvatar) {
+    settingsInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const initials = settingsAvatar.querySelector('.avatar-initials');
+            const existing = settingsAvatar.querySelector('.avatar-img');
+            if (initials) initials.remove();
+            if (existing) existing.remove();
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'avatar-img';
+            settingsAvatar.insertBefore(img, settingsAvatar.querySelector('.avatar-upload-overlay'));
+            localStorage.setItem('instructorProfilePhoto', e.target.result);
+            // Also update sidebar avatar if present
+            const sidebarAvatar = document.getElementById('sidebarAvatar');
+            if (sidebarAvatar) {
+                const si = sidebarAvatar.querySelector('.avatar-initials');
+                const se = sidebarAvatar.querySelector('.avatar-img');
+                if (si) si.remove();
+                if (se) se.remove();
+                const simg = document.createElement('img');
+                simg.src = e.target.result;
+                simg.className = 'avatar-img';
+                sidebarAvatar.insertBefore(simg, sidebarAvatar.querySelector('.avatar-upload-overlay'));
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
+</script>

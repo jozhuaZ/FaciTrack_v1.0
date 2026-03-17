@@ -1,0 +1,102 @@
+.roles-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-light);
+    padding: 1.5rem 3rem;
+    width: 100%;
+    overflow: hidden;
+}
+
+
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: clamp(0.75rem, 2vh, 1.5rem);
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    flex: 1;
+    align-content: center;
+    align-self: center;
+}
+
+.role-card {
+    background: var(--bg-white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: clamp(1rem, 3vh, 2rem);
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: clamp(0.375rem, 1.5vh, 0.75rem);
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-sm);
+    min-height: clamp(140px, 20vh, 180px);
+    justify-content: center;
+}
+
+.role-card:hover {
+    background: linear-gradient(135deg, rgba(10, 61, 98, 0.05) 0%, rgba(30, 136, 229, 0.09) 100%);
+    border-color: rgba(30, 136, 229, 0.35);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+.role-icon {
+    width: clamp(44px, 10vw, 52px);
+    height: clamp(44px, 10vw, 52px);
+    border-radius: var(--radius-md);
+    background: var(--teal-gradient);
+    color: white;
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: clamp(0.25rem, 1vh, 0.5rem);
+    flex-shrink: 0;
+}
+
+.role-title {
+    font-size: clamp(0.875rem, 2vw, 1rem);
+    font-weight: 600;
+    color: var(--primary-blue);
+    margin: 0;
+}
+
+.role-description {
+    font-size: clamp(0.6875rem, 1.6vw, 0.8125rem);
+    color: var(--gray-500);
+    line-height: 1.4;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .roles-main {
+        padding: 1rem 1.5rem;
+        overflow-y: auto;
+    }
+
+    .roles-grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+        align-content: start;
+    }
+}
+
+@media (max-width: 480px) {
+    .roles-main {
+        padding: 0.75rem 1rem;
+    }
+
+    .roles-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .role-card {
+        min-height: 140px;
+    }
+}

@@ -1,0 +1,171 @@
+<%- include('../../partials/header') %>
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+<style>
+    html, body { overflow: hidden !important; height: 100vh !important; }
+    body { display: flex; flex-direction: column; }
+    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+</style>
+
+<div class="instructor-layout">
+    <%- include('../../partials/instructor-sidebar', { activePage: 'consultations', pendingCount: appointments.filter(a => a.status === 'pending').length }) %>
+
+    <main class="instructor-main">
+        <div class="main-container">
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Consultations</h1>
+                    <p class="page-subtitle">Manage all appointment requests from students</p>
+                </div>
+                <div class="header-actions">
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">All</button>
+                        <button class="filter-tab" data-filter="pending">Pending <span class="tab-count"><%= appointments.filter(a=>a.status==='pending').length %></span></button>
+                        <button class="filter-tab" data-filter="confirmed">Confirmed</button>
+                        <button class="filter-tab" data-filter="declined">Declined</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="consultations-list" id="consultationsList">
+                <% appointments.forEach(apt => { %>
+                <div class="consultation-card" data-status="<%= apt.status %>">
+                    <div class="consult-card-left">
+                        <div class="apt-avatar-xs"><%= apt.studentName.split(' ').map(n=>n[0]).join('') %></div>
+                    </div>
+                    <div class="consult-card-body">
+                        <div class="consult-card-top">
+                            <div>
+                                <h4 class="consult-student-name"><%= apt.studentName %></h4>
+                                <p class="consult-student-id"><%= apt.studentId %></p>
+                            </div>
+                            <span class="consult-status-badge <%= apt.status %>">
+                                <%= apt.status.charAt(0).toUpperCase() + apt.status.slice(1) %>
+                            </span>
+                        </div>
+                        <p class="consult-topic"><%= apt.topic %></p>
+                        <div class="consult-meta">
+                            <span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <%= apt.date %>
+                            </span>
+                            <span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <%= apt.time %> · <%= apt.duration %>
+                            </span>
+                            <span class="consult-requested">Requested <%= apt.requestedAt %></span>
+                        </div>
+                    </div>
+                    <% if (apt.status === 'pending') { %>
+                    <div class="consult-card-actions">
+                        <button class="btn-approve-full" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Approve
+                        </button>
+                        <button class="btn-decline-full" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            Decline
+                        </button>
+                        <button class="btn-reschedule-full" data-id="<%= apt.id %>">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            Reschedule
+                        </button>
+                    </div>
+                    <% } %>
+                </div>
+                <% }); %>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- Decline Modal -->
+<div class="modal-overlay" id="declineModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Decline Appointment</h3>
+            <button class="modal-close" id="closeModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-description">Provide a reason for declining <strong id="declineStudentName"></strong>'s request. They will be notified via email.</p>
+            <label class="modal-label">Reason</label>
+            <textarea id="declineReason" class="modal-textarea" placeholder="e.g., Schedule conflict, already fully booked..." rows="4"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal btn-cancel" id="cancelDecline">Cancel</button>
+            <button class="btn-modal btn-confirm" id="confirmDecline">Decline & Notify</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>
+<script src="/js/instructor-dashboard.js?v=<%= Date.now() %>"></script>
+<script>
+// Filter tabs
+document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.consultation-card').forEach(card => {
+            card.style.display = (filter === 'all' || card.dataset.status === filter) ? 'flex' : 'none';
+        });
+    });
+});
+
+// Approve
+document.querySelectorAll('.btn-approve-full').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const student = this.dataset.student;
+        const card = this.closest('.consultation-card');
+        card.querySelector('.consult-status-badge').textContent = 'Confirmed';
+        card.querySelector('.consult-status-badge').className = 'consult-status-badge confirmed';
+        card.dataset.status = 'confirmed';
+        card.querySelector('.consult-card-actions').remove();
+        showToast('success', 'Approved', `${student}'s appointment has been confirmed.`);
+    });
+});
+
+// Decline
+let currentStudent = null;
+document.querySelectorAll('.btn-decline-full').forEach(btn => {
+    btn.addEventListener('click', function() {
+        currentStudent = { name: this.dataset.student, card: this.closest('.consultation-card') };
+        document.getElementById('declineStudentName').textContent = this.dataset.student;
+        document.getElementById('declineReason').value = '';
+        document.getElementById('declineModal').classList.add('show');
+    });
+});
+
+document.getElementById('closeModal').addEventListener('click', () => document.getElementById('declineModal').classList.remove('show'));
+document.getElementById('cancelDecline').addEventListener('click', () => document.getElementById('declineModal').classList.remove('show'));
+document.getElementById('confirmDecline').addEventListener('click', () => {
+    if (!document.getElementById('declineReason').value.trim()) {
+        showToast('error', 'Required', 'Please provide a reason.');
+        return;
+    }
+    if (currentStudent) {
+        currentStudent.card.querySelector('.consult-status-badge').textContent = 'Declined';
+        currentStudent.card.querySelector('.consult-status-badge').className = 'consult-status-badge declined';
+        currentStudent.card.dataset.status = 'declined';
+        currentStudent.card.querySelector('.consult-card-actions').remove();
+        showToast('success', 'Declined', `${currentStudent.name} has been notified.`);
+    }
+    document.getElementById('declineModal').classList.remove('show');
+});
+
+function showToast(type, title, message) {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<div class="toast-content"><p class="toast-title">${title}</p><p class="toast-message">${message}</p></div>`;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
+}
+</script>
