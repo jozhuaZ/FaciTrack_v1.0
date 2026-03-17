@@ -1,43 +1,46 @@
 <%- include('../partials/header') %>
 
-<link rel="stylesheet" href="/css/index.css?v=<%= Date.now() %>">
+    <link rel="stylesheet" href="/css/index.css?v=<%= Date.now() %>">
 
-<main class="index-main">
-    <div class="index-layout">
+    <main class="index-main">
+        <div class="index-layout">
 
-        <!-- Left: Hero -->
-        <div class="hero-panel">
-            <div class="hero-label">Progressive Web Application</div>
-            <h1 class="hero-title-academic">FaciTrack</h1>
-            <p class="hero-full-name">Faculty Appointment and Real-Time Monitoring System</p>
-            <p class="hero-description-academic">
-                A digital solution for managing faculty consultations and monitoring presence
-                at Camarines Sur Polytechnic Colleges.
-            </p>
-            <a href="/roles" class="btn-academic btn-primary-academic">Get Started</a>
+            <!-- Left: Hero -->
+            <div class="hero-panel">
+                <h1 class="hero-title-academic">FaciTrack</h1>
+                <p class="hero-full-name">Faculty Appointment and Real-Time Monitoring System</p>
+                <p class="hero-description-academic">
+                    A digital solution for managing faculty consultations and monitoring presence for administrative
+                    oversight
+                    at Camarines Sur Polytechnic Colleges.
+                </p>
+                <a href="/roles" class="btn-academic btn-primary-academic">Get Started</a>
+            </div>
+
+            <!-- Right: Feature Cards -->
+            <div class="features-panel">
+                <div class="overview-card">
+                    <div class="overview-number">01</div>
+                    <h3 class="overview-card-title">Appointment Management</h3>
+                    <p class="overview-card-text">Students can view available consultation hours and book appointments
+                        through a centralized platform.</p>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-number">02</div>
+                    <h3 class="overview-card-title">Real-Time Presence Detection</h3>
+                    <p class="overview-card-text">BLE SmartTags and ESP32 scanners provide accurate room-level faculty
+                        presence monitoring.</p>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-number">03</div>
+                    <h3 class="overview-card-title">Administrative Dashboard</h3>
+                    <p class="overview-card-text">Authorized personnel access monitoring logs and appointment records
+                        for full oversight.</p>
+                </div>
+            </div>
+
         </div>
+    </main>
 
-        <!-- Right: Feature Cards -->
-        <div class="features-panel">
-            <div class="overview-card">
-                <div class="overview-number">01</div>
-                <h3 class="overview-card-title">Appointment Management</h3>
-                <p class="overview-card-text">Students can view available consultation hours and book appointments through a centralized platform.</p>
-            </div>
-            <div class="overview-card">
-                <div class="overview-number">02</div>
-                <h3 class="overview-card-title">Real-Time Presence Detection</h3>
-                <p class="overview-card-text">BLE SmartTags and ESP32 scanners provide accurate room-level faculty presence monitoring.</p>
-            </div>
-            <div class="overview-card">
-                <div class="overview-number">03</div>
-                <h3 class="overview-card-title">Administrative Dashboard</h3>
-                <p class="overview-card-text">Authorized personnel access monitoring logs and appointment records for full oversight.</p>
-            </div>
-        </div>
-
-    </div>
-</main>
-
-<%- include('../partials/footer') %>
-<%- include('../partials/script') %>
+    <%- include('../partials/footer') %>
+        <%- include('../partials/script') %>
