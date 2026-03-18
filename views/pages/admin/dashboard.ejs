@@ -1,0 +1,261 @@
+<%- include('../../partials/header') %>
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+<style>
+    html, body { overflow: hidden !important; height: 100vh !important; }
+    body { display: flex; flex-direction: column; }
+    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .breakdown-label { min-width: 90px; font-size: 0.8125rem; color: var(--gray-700); font-weight: 500; }
+    .breakdown-value { min-width: 28px; text-align: right; font-size: 0.8125rem; font-weight: 700; color: var(--gray-900); }
+    .system-info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--gray-100); }
+    .system-info-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .system-info-label { font-size: 0.8125rem; color: var(--gray-500); }
+    .system-info-value { font-size: 0.875rem; font-weight: 600; color: var(--gray-900); }
+</style>
+
+<div class="instructor-layout">
+    <%- include('../../partials/admin-sidebar', { activePage: 'dashboard' }) %>
+    <main class="instructor-main">
+        <div class="main-container">
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Dashboard</h1>
+                    <p class="page-subtitle">Welcome, <%= admin.name.split(' ')[0] %>! Here's the system overview.</p>
+                </div>
+                <div class="header-actions">
+                    <a href="/admin/users" class="btn-header-action">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Manage Users
+                    </a>
+                    <a href="/admin/settings" class="btn-header-action primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        System Settings
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-overview">
+                <div class="stat-card-large confirmed">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Total Users</p>
+                        <h2 class="stat-card-value"><%= users.length %></h2>
+                        <p class="stat-card-sublabel">Registered accounts</p>
+                    </div>
+                </div>
+                <div class="stat-card-large pending">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Instructors</p>
+                        <h2 class="stat-card-value"><%= users.filter(u => u.role === 'Instructor').length %></h2>
+                        <p class="stat-card-sublabel">Faculty accounts</p>
+                    </div>
+                </div>
+                <div class="stat-card-large workload">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Audit Logs Today</p>
+                        <h2 class="stat-card-value"><%= logs.filter(l => l.isToday).length %></h2>
+                        <p class="stat-card-sublabel">System events recorded</p>
+                    </div>
+                </div>
+                <div class="stat-card-large presence">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Active Accounts</p>
+                        <h2 class="stat-card-value"><%= users.filter(u => u.status === 'active').length %></h2>
+                        <p class="stat-card-sublabel">Currently enabled</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="dashboard-content-grid">
+
+                <!-- Recent Users -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent User Accounts</h3>
+                        <a href="/admin/users" class="card-link">View All →</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="appointments-list-dashboard">
+                            <% users.slice(0, 5).forEach(u => { %>
+                            <div class="appointment-row">
+                                <div class="apt-row-left">
+                                    <div class="apt-avatar-xs"><%= u.name.split(' ').map(n => n[0]).join('').slice(0,2) %></div>
+                                    <div class="apt-row-info">
+                                        <h4 class="apt-row-name"><%= u.name %></h4>
+                                        <p class="apt-row-details"><%= u.role %> — <%= u.email %></p>
+                                    </div>
+                                </div>
+                                <span class="table-badge <%= u.status === 'active' ? 'confirmed' : 'declined' %>">
+                                    <%= u.status === 'active' ? 'Active' : 'Inactive' %>
+                                </span>
+                            </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Audit Logs -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Audit Logs</h3>
+                        <a href="/admin/logs" class="card-link">View All →</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="presence-list-dashboard">
+                            <% logs.slice(0, 5).forEach(log => { %>
+                            <div class="presence-row">
+                                <div class="presence-row-icon <%= log.type === 'login' || log.type === 'create' ? 'entered' : 'exited' %>">
+                                    <% if (log.type === 'login') { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                                    <% } else if (log.type === 'create') { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    <% } else if (log.type === 'update') { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    <% } else { %>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                    <% } %>
+                                </div>
+                                <div class="presence-row-info">
+                                    <p class="presence-row-action"><%= log.user %> — <%= log.action %></p>
+                                    <p class="presence-row-time"><%= log.timestamp %></p>
+                                </div>
+                            </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Role Breakdown -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">User Role Breakdown</h3>
+                        <a href="/admin/users" class="card-link">Manage →</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="workload-breakdown">
+                            <% const roleData = [
+                                { label: 'Instructors', role: 'Instructor' },
+                                { label: 'Dean', role: 'Dean' },
+                                { label: 'Admin', role: 'Admin' }
+                            ]; %>
+                            <% roleData.forEach(r => { %>
+                            <% const count = users.filter(u => u.role === r.role).length; %>
+                            <div class="breakdown-row">
+                                <span class="breakdown-label"><%= r.label %></span>
+                                <div class="breakdown-bar-wrap">
+                                    <div class="breakdown-bar" style="width:<%= (count / users.length) * 100 %>%"></div>
+                                </div>
+                                <span class="breakdown-value"><%= count %></span>
+                            </div>
+                            <% }); %>
+                        </div>
+                        <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--gray-100);">
+                            <div class="system-info-row">
+                                <span class="system-info-label">Active Accounts</span>
+                                <span class="system-info-value"><%= users.filter(u => u.status === 'active').length %> / <%= users.length %></span>
+                            </div>
+                            <div class="system-info-row">
+                                <span class="system-info-label">Inactive Accounts</span>
+                                <span class="system-info-value"><%= users.filter(u => u.status === 'inactive').length %></span>
+                            </div>
+                            <div class="system-info-row">
+                                <span class="system-info-label">Department</span>
+                                <span class="system-info-value">College of Computer Studies</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Info -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">System Configuration</h3>
+                        <a href="/admin/settings" class="card-link">Manage →</a>
+                    </div>
+                    <div class="card-body">
+                        <% settings.forEach(s => { %>
+                        <div class="system-info-row">
+                            <span class="system-info-label"><%= s.label %></span>
+                            <span class="system-info-value"><%= s.value %></span>
+                        </div>
+                        <% }); %>
+                    </div>
+                </div>
+
+                <!-- Monitoring Quick Stats -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Monitoring Overview</h3>
+                        <a href="/admin/monitoring" class="card-link">View Logs →</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="system-info-row">
+                            <span class="system-info-label">Total Events Today</span>
+                            <span class="system-info-value"><%= presenceLogs.length %></span>
+                        </div>
+                        <div class="system-info-row">
+                            <span class="system-info-label">Entries Detected</span>
+                            <span class="system-info-value"><%= presenceLogs.filter(l => l.status === 'entered').length %></span>
+                        </div>
+                        <div class="system-info-row">
+                            <span class="system-info-label">Exits Detected</span>
+                            <span class="system-info-value"><%= presenceLogs.filter(l => l.status === 'exited').length %></span>
+                        </div>
+                        <div class="system-info-row">
+                            <span class="system-info-label">Faculty Monitored</span>
+                            <span class="system-info-value"><%= faculty.length %></span>
+                        </div>
+                        <div class="system-info-row">
+                            <span class="system-info-label">Detection Method</span>
+                            <span class="system-info-value">BLE SmartTag</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments Quick Stats -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Appointments Overview</h3>
+                        <a href="/admin/appointments" class="card-link">View All →</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="system-info-row">
+                            <span class="system-info-label">Total Appointments</span>
+                            <span class="system-info-value"><%= allAppointments.length %></span>
+                        </div>
+                        <div class="system-info-row">
+                            <span class="system-info-label">Pending</span>
+                            <span class="system-info-value"><%= allAppointments.filter(a => a.status === 'pending').length %></span>
+                        </div>
+                        <div class="system-info-row">
+                            <span class="system-info-label">Confirmed</span>
+                            <span class="system-info-value"><%= allAppointments.filter(a => a.status === 'confirmed').length %></span>
+                        </div>
+                        <div class="system-info-row">
+                            <span class="system-info-label">Declined</span>
+                            <span class="system-info-value"><%= allAppointments.filter(a => a.status === 'declined').length %></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>

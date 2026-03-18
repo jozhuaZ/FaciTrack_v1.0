@@ -1,0 +1,196 @@
+<%- include('../../partials/header') %>
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+<style>
+    html, body { overflow: hidden !important; height: 100vh !important; }
+    body { display: flex; flex-direction: column; }
+    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+</style>
+
+<div class="instructor-layout">
+    <%- include('../../partials/admin-sidebar', { activePage: 'logs' }) %>
+    <main class="instructor-main">
+        <div class="main-container">
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Audit Logs</h1>
+                    <p class="page-subtitle">Track all system activity, user access, and configuration changes.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-header-action primary" onclick="showToast('success','Export','Audit log export is being prepared...')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export Logs
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-overview">
+                <div class="stat-card-large confirmed">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Total Events</p>
+                        <h2 class="stat-card-value"><%= logs.length %></h2>
+                        <p class="stat-card-sublabel">All recorded events</p>
+                    </div>
+                </div>
+                <div class="stat-card-large pending">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Logins Today</p>
+                        <h2 class="stat-card-value"><%= logs.filter(l => l.type === 'login' && l.isToday).length %></h2>
+                        <p class="stat-card-sublabel">Successful sign-ins</p>
+                    </div>
+                </div>
+                <div class="stat-card-large workload">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Updates Today</p>
+                        <h2 class="stat-card-value"><%= logs.filter(l => l.type === 'update' && l.isToday).length %></h2>
+                        <p class="stat-card-sublabel">Configuration changes</p>
+                    </div>
+                </div>
+                <div class="stat-card-large presence">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Events Today</p>
+                        <h2 class="stat-card-value"><%= logs.filter(l => l.isToday).length %></h2>
+                        <p class="stat-card-sublabel">Recorded this session</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h3 class="card-title">All Events (<span id="visibleCount"><%= logs.length %></span>)</h3>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <select class="modal-select" id="filterType" onchange="applyFilters()" style="padding:0.375rem 0.75rem;font-size:0.8125rem;">
+                            <option value="">All Types</option>
+                            <option value="login">Login</option>
+                            <option value="logout">Logout</option>
+                            <option value="update">Update</option>
+                            <option value="create">Create</option>
+                            <option value="delete">Delete</option>
+                        </select>
+                        <select class="modal-select" id="filterRole" onchange="applyFilters()" style="padding:0.375rem 0.75rem;font-size:0.8125rem;">
+                            <option value="">All Roles</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Dean">Dean</option>
+                            <option value="Instructor">Instructor</option>
+                        </select>
+                        <input type="text" class="modal-select" id="searchInput" placeholder="Search user or action..." oninput="applyFilters()" style="padding:0.375rem 0.75rem;font-size:0.8125rem;width:180px;">
+                    </div>
+                </div>
+                <div class="card-body" style="padding:0;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                                <th>Type</th>
+                                <th>IP Address</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody">
+                            <% logs.forEach((log, i) => { %>
+                            <tr data-type="<%= log.type %>" data-role="<%= log.role %>" data-user="<%= log.user.toLowerCase() %>" data-action="<%= log.action.toLowerCase() %>">
+                                <td style="color:var(--gray-400);font-size:0.8125rem;"><%= i + 1 %></td>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:0.625rem;">
+                                        <div class="apt-avatar-xs" style="width:34px;height:34px;font-size:0.6875rem;flex-shrink:0;"><%= log.user.split(' ').map(n=>n[0]).join('').slice(0,2) %></div>
+                                        <span style="font-weight:600;font-size:0.875rem;color:var(--gray-900);"><%= log.user %></span>
+                                    </div>
+                                </td>
+                                <td><span class="table-badge <%= log.role === 'Admin' ? 'workload' : log.role === 'Dean' ? 'pending' : 'confirmed' %>"><%= log.role %></span></td>
+                                <td style="color:var(--gray-700);font-size:0.875rem;max-width:260px;"><%= log.action %></td>
+                                <td>
+                                    <span class="table-badge <%= log.type === 'login' || log.type === 'create' ? 'confirmed' : log.type === 'logout' || log.type === 'delete' ? 'declined' : 'pending' %>">
+                                        <%= log.type.charAt(0).toUpperCase() + log.type.slice(1) %>
+                                    </span>
+                                </td>
+                                <td style="color:var(--gray-500);font-size:0.8125rem;font-family:monospace;"><%= log.ip %></td>
+                                <td style="color:var(--gray-500);font-size:0.8125rem;white-space:nowrap;"><%= log.timestamp %></td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                    <div class="pagination-bar">
+                        <button class="btn-page" id="prevBtn" onclick="changePage(-1)">&#8592; Prev</button>
+                        <span class="page-info" id="paginationInfo"></span>
+                        <button class="btn-page" id="nextBtn" onclick="changePage(1)">Next &#8594;</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>
+<script>
+let currentPage = 1;
+const rowsPerPage = 7;
+
+function getAllRows() {
+    return Array.from(document.querySelectorAll('#logsTableBody tr'));
+}
+
+function applyFilters() {
+    const type = document.getElementById('filterType').value;
+    const role = document.getElementById('filterRole').value;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    getAllRows().forEach(r => {
+        const matchType = !type || r.dataset.type === type;
+        const matchRole = !role || r.dataset.role === role;
+        const matchSearch = !search || r.dataset.user.includes(search) || r.dataset.action.includes(search);
+        r.dataset.filtered = (matchType && matchRole && matchSearch) ? 'show' : 'hide';
+        r.style.display = 'none';
+    });
+    currentPage = 1;
+    renderPage();
+}
+
+function getVisibleRows() {
+    return getAllRows().filter(r => r.dataset.filtered !== 'hide');
+}
+
+function renderPage() {
+    const rows = getVisibleRows();
+    const total = rows.length;
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    rows.forEach((r, i) => r.style.display = (i >= start && i < end) ? '' : 'none');
+    document.getElementById('paginationInfo').textContent = total === 0 ? 'No results found' : `Showing ${Math.min(start+1,total)}–${Math.min(end,total)} of ${total}`;
+    document.getElementById('prevBtn').disabled = currentPage === 1;
+    document.getElementById('nextBtn').disabled = end >= total;
+    document.getElementById('visibleCount').textContent = total;
+}
+
+function changePage(dir) { currentPage += dir; renderPage(); }
+
+function showToast(type, title, message) {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<div class="toast-content"><p class="toast-title">${title}</p><p class="toast-message">${message}</p></div>`;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
+}
+
+getAllRows().forEach(r => r.dataset.filtered = 'show');
+renderPage();
+</script>
