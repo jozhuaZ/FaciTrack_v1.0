@@ -30,6 +30,7 @@ app.use((req, res, next) => {
 app.use('/', require('./routes/index'));
 app.use('/student', require('./routes/student'));
 app.use('/instructor', require('./routes/instructor'));
+app.use('/display', require('./routes/display'));
 app.use('/dean', require('./routes/dean'));
 app.use('/admin', require('./routes/admin'));
 
