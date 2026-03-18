@@ -1,0 +1,185 @@
+<%- include('../../partials/header') %>
+    <link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+    <style>
+        html,
+        body {
+            overflow: hidden !important;
+            height: 100vh !important;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+
+    <div class="instructor-layout">
+        <%- include('../../partials/dean-sidebar', { activePage: 'faculty' }) %>
+
+            <main class="instructor-main">
+                <div class="main-container">
+
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Faculty</h1>
+                            <p class="page-subtitle">Real-time faculty presence status for all faculty members</p>
+                        </div>
+                        <div class="header-actions">
+                            <div class="ble-live-status in-room"
+                                style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);font-size:0.8125rem;">
+                                <span class="ble-indicator-mini in-room"><span class="ble-pulse-mini"></span><span
+                                        class="ble-dot-mini"></span></span>
+                                <span>
+                                    <%= faculty.filter(f=> f.bleStatus === 'in-room').length %> of <%= faculty.length %>
+                                            In Room
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="stats-overview">
+                        <div class="stat-card-large confirmed">
+                            <div class="stat-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </svg>
+                            </div>
+                            <div class="stat-card-content">
+                                <p class="stat-card-label">In Room</p>
+                                <h2 class="stat-card-value">
+                                    <%= faculty.filter(f=> f.bleStatus === 'in-room').length %>
+                                </h2>
+                                <p class="stat-card-sublabel">BLE detected</p>
+                            </div>
+                        </div>
+                        <div class="stat-card-large presence">
+                            <div class="stat-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                </svg>
+                            </div>
+                            <div class="stat-card-content">
+                                <p class="stat-card-label">Out of Room</p>
+                                <h2 class="stat-card-value">
+                                    <%= faculty.filter(f=> f.bleStatus === 'out-of-room').length %>
+                                </h2>
+                                <p class="stat-card-sublabel">Not detected</p>
+                            </div>
+                        </div>
+                        <div class="stat-card-large workload">
+                            <div class="stat-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                            </div>
+                            <div class="stat-card-content">
+                                <p class="stat-card-label">Total Faculty</p>
+                                <h2 class="stat-card-value">
+                                    <%= faculty.length %>
+                                </h2>
+                                <p class="stat-card-sublabel">Registered in system</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Faculty Table -->
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Faculty Directory</h3>
+                            <div style="display:flex;gap:0.5rem;align-items:center;">
+                                <select class="modal-select" id="statusFilter"
+                                    style="padding:0.375rem 0.75rem;font-size:0.8125rem;">
+                                    <option value="all">All Status</option>
+                                    <option value="in-room">In Room</option>
+                                    <option value="out-of-room">Out of Room</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding:0;">
+                            <table class="data-table" id="facultyTable">
+                                <thead>
+                                    <tr>
+                                        <th>Faculty</th>
+                                        <th>Department</th>
+                                        <th>Office / Room</th>
+                                        <th>BLE Status</th>
+                                        <th>Last Detected</th>
+                                        <th>Consultations (Month)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% faculty.forEach(f=> { %>
+                                        <tr data-status="<%= f.bleStatus %>">
+                                            <td>
+                                                <div style="display:flex;align-items:center;gap:0.75rem;">
+                                                    <div class="apt-avatar-xs">
+                                                        <%= f.name.split(' ').map(n => n[0]).join('') %></div>
+                                        <div>
+                                            <p style="font-weight:600;font-size:0.875rem;color:var(--gray-900);margin:0;"><%= f.name %></p>
+                                            <p style="font-size:0.75rem;color:var(--gray-500);margin:0;"><%= f.position %></p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><%= f.department %></td>
+                                <td><%= f.officeRoom %></td>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                                        <span class="ble-indicator-mini <%= f.bleStatus %>">
+                                            <% if (f.bleStatus === ' in-room') { %><span class="ble-pulse-mini"></span>
+                                                            <% } %>
+                                                                <span class="ble-dot-mini"></span>
+                                                                </span>
+                                                                <span
+                                                                    class="table-badge <%= f.bleStatus === 'in-room' ? 'confirmed' : 'declined' %>">
+                                                                    <%= f.bleStatus==='in-room' ? 'In Room'
+                                                                        : 'Out of Room' %>
+                                                                </span>
+                                                    </div>
+                                            </td>
+                                            <td>
+                                                <%= f.bleLastDetected %>
+                                            </td>
+                                            <td>
+                                                <%= f.consultationsThisMonth %>
+                                            </td>
+                                        </tr>
+                                        <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <%- include('../../partials/footer') %>
+        <%- include('../../partials/script') %>
+            <script>
+                document.getElementById('statusFilter').addEventListener('change', function () {
+                    const val = this.value;
+                    document.querySelectorAll('#facultyTable tbody tr').forEach(row => {
+                        row.style.display = (val === 'all' || row.dataset.status === val) ? '' : 'none';
+                    });
+                });
+            </script>

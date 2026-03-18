@@ -1,0 +1,147 @@
+<%- include('../../partials/header') %>
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+<style>
+    html, body { overflow: hidden !important; height: 100vh !important; }
+    body { display: flex; flex-direction: column; }
+    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+</style>
+
+<div class="instructor-layout">
+    <%- include('../../partials/dean-sidebar', { activePage: 'reports' }) %>
+
+    <main class="instructor-main">
+        <div class="main-container">
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Reports</h1>
+                    <p class="page-subtitle">Faculty workload and consultation analytics — CSPC institutional format</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-header-action primary" id="btnDownloadReport">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="stats-overview">
+                <div class="stat-card-large workload">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Total Hours (All Faculty)</p>
+                        <h2 class="stat-card-value"><%= faculty.reduce((sum, f) => sum + f.hoursThisMonth, 0) %>h</h2>
+                        <p class="stat-card-sublabel">This month</p>
+                    </div>
+                </div>
+                <div class="stat-card-large confirmed">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Total Consultations</p>
+                        <h2 class="stat-card-value"><%= faculty.reduce((sum, f) => sum + f.consultationsThisMonth, 0) %></h2>
+                        <p class="stat-card-sublabel">This month</p>
+                    </div>
+                </div>
+                <div class="stat-card-large pending">
+                    <div class="stat-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Avg Hours / Faculty</p>
+                        <h2 class="stat-card-value"><%= (faculty.reduce((sum, f) => sum + f.hoursThisMonth, 0) / faculty.length).toFixed(1) %>h</h2>
+                        <p class="stat-card-sublabel">Per faculty this month</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workload Chart -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h3 class="card-title">Faculty Workload Comparison</h3>
+                </div>
+                <div class="card-body">
+                    <div class="bar-chart">
+                        <% faculty.forEach(f => { %>
+                        <div class="bar-chart-item">
+                            <div class="bar-chart-bar-wrap">
+                                <div class="bar-chart-bar" style="height:<%= Math.max((f.hoursThisMonth / 60) * 100, 8) %>%" title="<%= f.name %>: <%= f.hoursThisMonth %>h">
+                                    <span class="bar-value"><%= f.hoursThisMonth %></span>
+                                </div>
+                            </div>
+                            <span class="bar-label"><%= f.name.split(' ').slice(-1)[0] %></span>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <p class="chart-legend">Hours logged per faculty this month</p>
+                </div>
+            </div>
+
+            <!-- CSPC Institutional Report Preview -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h3 class="card-title">CSPC Institutional Report Preview</h3>
+                    <button class="btn-header-action" id="btnPrintReport">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        Print
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="report-preview">
+                        <div class="report-header-block">
+                            <p class="report-institution">Camarines Sur Polytechnic Colleges</p>
+                            <p class="report-college">College of Computer Studies</p>
+                            <h4 class="report-title-block">Faculty Consultation Workload Report</h4>
+                            <p class="report-period">Period: March 2026</p>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Faculty Name</th>
+                                    <th>Department</th>
+                                    <th>Total Hours</th>
+                                    <th>Consultations</th>
+                                    <th>Avg Duration</th>
+                                    <th>BLE Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% faculty.forEach(f => { %>
+                                <tr>
+                                    <td><strong><%= f.name %></strong></td>
+                                    <td><%= f.department %></td>
+                                    <td><%= f.hoursThisMonth %>h</td>
+                                    <td><%= f.consultationsThisMonth %></td>
+                                    <td><%= f.avgDuration %></td>
+                                    <td><span class="table-badge <%= f.bleStatus === 'in-room' ? 'confirmed' : 'declined' %>"><%= f.bleStatus === 'in-room' ? 'In Room' : 'Out' %></span></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>
+<script>
+function showToast(type, title, message) {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<div class="toast-content"><p class="toast-title">${title}</p><p class="toast-message">${message}</p></div>`;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
+}
+document.getElementById('btnDownloadReport').addEventListener('click', () => showToast('success', 'Downloading', 'CSPC workload report is being prepared...'));
+document.getElementById('btnPrintReport').addEventListener('click', () => window.print());
+</script>
