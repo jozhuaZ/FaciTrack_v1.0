@@ -1,174 +1,181 @@
-// =============================================
-// INSTRUCTOR DASHBOARD — Sidebar Layout
-// Professional Design for FaciTrack
-// =============================================
+document.addEventListener('DOMContentLoaded', function () {
 
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // Quick Actions
-    const btnExportSchedule = document.getElementById('btnExportSchedule');
-    if (btnExportSchedule) {
-        btnExportSchedule.addEventListener('click', function() {
-            showToast('success', 'Export Schedule', 'Your consultation schedule has been exported to calendar format.');
-        });
-    }
+  /* ── Mark all notifications read ── */
+  const btnMarkAllRead = document.getElementById('btnMarkAllRead');
+  if (btnMarkAllRead) {
+    btnMarkAllRead.addEventListener('click', function () {
+      document.querySelectorAll('.notification-row.unread').forEach(row => {
+        row.classList.remove('unread');
+        const dot = row.querySelector('.notif-unread-dot');
+        if (dot) dot.remove();
+      });
+      // Also sync the panel
+      document.querySelectorAll('.notif-panel-item.unread').forEach(item => {
+        item.classList.remove('unread');
+        const dot = item.querySelector('.notif-panel-dot');
+        if (dot) dot.remove();
+      });
+      const badge = document.getElementById('notifBellBadge');
+      if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
+      showToast('success', 'Done', 'All notifications marked as read.');
+    });
+  }
 
-    const btnDownloadReport = document.getElementById('btnDownloadReport');
-    if (btnDownloadReport) {
-        btnDownloadReport.addEventListener('click', function() {
-            showToast('success', 'Download Report', 'Downloading CSPC-formatted workload report...');
-        });
-    }
+  /* ── View all notifications → open panel ── */
+  document.getElementById('btnViewAllNotif')?.addEventListener('click', () => {
+    document.getElementById('notifPanel')?.classList.add('open');
+    document.getElementById('notifBackdrop')?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  });
 
-    // Mark All Notifications as Read
-    const btnMarkAllRead = document.getElementById('btnMarkAllRead');
-    if (btnMarkAllRead) {
-        btnMarkAllRead.addEventListener('click', function() {
-            document.querySelectorAll('.notification-row.unread').forEach(item => {
-                item.classList.remove('unread');
-                const indicator = item.querySelector('.notif-unread-dot');
-                if (indicator) indicator.remove();
-            });
-            showToast('success', 'Notifications', 'All notifications marked as read.');
-        });
-    }
-    
-    // Modal Management
-    const declineModal = document.getElementById('declineModal');
-    const closeModalBtn = document.getElementById('closeModal');
-    const cancelDeclineBtn = document.getElementById('cancelDecline');
-    const confirmDeclineBtn = document.getElementById('confirmDecline');
-    const declineReasonInput = document.getElementById('declineReason');
-    const declineStudentNameEl = document.getElementById('declineStudentName');
+  /* ── Decline modal ── */
+  const declineModal   = document.getElementById('declineModal');
+  const declineNameEl  = document.getElementById('declineStudentName');
+  const declineReason  = document.getElementById('declineReason');
+  let pendingDeclineId = null, pendingDeclineName = null;
 
-    let currentDeclineId = null;
-    let currentDeclineStudent = null;
+  function openDeclineModal(id, name) {
+    pendingDeclineId   = id;
+    pendingDeclineName = name;
+    declineNameEl.textContent = name;
+    declineReason.value = '';
+    declineModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDeclineModal() {
+    declineModal.classList.remove('show');
+    document.body.style.overflow = '';
+    pendingDeclineId = pendingDeclineName = null;
+  }
 
-    function showModal(studentName, aptId) {
-        currentDeclineId = aptId;
-        currentDeclineStudent = studentName;
-        declineStudentNameEl.textContent = studentName;
-        declineReasonInput.value = '';
-        declineModal.classList.add('show');
-        document.body.style.overflow = 'hidden';
-    }
+  document.getElementById('closeModal')?.addEventListener('click', closeDeclineModal);
+  document.getElementById('cancelDecline')?.addEventListener('click', closeDeclineModal);
+  declineModal?.addEventListener('click', e => { if (e.target === declineModal) closeDeclineModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && declineModal?.classList.contains('show')) closeDeclineModal(); });
 
-    function hideModal() {
-        declineModal.classList.remove('show');
-        document.body.style.overflow = '';
-        currentDeclineId = null;
-        currentDeclineStudent = null;
-    }
+  document.getElementById('confirmDecline')?.addEventListener('click', () => {
+    const reason = declineReason.value.trim();
+    if (!reason) { showToast('error', 'Required', 'Please provide a reason.'); return; }
 
-    if (closeModalBtn) closeModalBtn.addEventListener('click', hideModal);
-    if (cancelDeclineBtn) cancelDeclineBtn.addEventListener('click', hideModal);
+    fetch(`/instructor/consultations/${pendingDeclineId}/decline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    })
+      .then(r => r.json())
+      .then(() => {
+        const name = pendingDeclineName;
+        closeDeclineModal();
+        showToast('success', 'Declined', `${name} has been notified.`);
+        removeAppointmentRow(name);
+      })
+      .catch(() => showToast('error', 'Error', 'Could not decline. Try again.'));
+  });
 
-    // Close modal on backdrop click
-    if (declineModal) {
-        declineModal.addEventListener('click', (e) => {
-            if (e.target === declineModal) {
-                hideModal();
-            }
-        });
-    }
+  /* ── Approve buttons ── */
+  document.querySelectorAll('.btn-icon-action.approve').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const id   = this.dataset.id;
+      const name = this.dataset.student;
+      fetch(`/instructor/consultations/${id}/approve`, { method: 'POST' })
+        .then(r => r.json())
+        .then(() => {
+          showToast('success', 'Approved', `${name}'s appointment confirmed.`);
+          removeAppointmentRow(name);
+        })
+        .catch(() => showToast('error', 'Error', 'Could not approve. Try again.'));
+    });
+  });
 
-    // ESC key closes modal
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && declineModal.classList.contains('show')) {
-            hideModal();
+  /* ── Decline buttons ── */
+  document.querySelectorAll('.btn-icon-action.decline').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      openDeclineModal(this.dataset.id, this.dataset.student);
+    });
+  });
+
+  function removeAppointmentRow(name) {
+    setTimeout(() => {
+      document.querySelectorAll('.appointment-row').forEach(row => {
+        const nameEl = row.querySelector('.apt-row-name');
+        if (nameEl && nameEl.textContent.trim() === name) {
+          row.style.transition = 'opacity .3s, transform .3s';
+          row.style.opacity = '0';
+          row.style.transform = 'translateX(-16px)';
+          setTimeout(() => row.remove(), 320);
         }
-    });
+      });
+    }, 400);
+  }
 
-    // Confirm Decline
-    if (confirmDeclineBtn) {
-        confirmDeclineBtn.addEventListener('click', () => {
-            const reason = declineReasonInput.value.trim();
-            
-            if (!reason) {
-                showToast('error', 'Reason Required', 'Please provide a reason for declining this appointment.');
-                return;
-            }
+  /* ── Workload snapshot ── */
+  loadWorkloadSnapshot();
 
-            // In production, this would be an API call
-            hideModal();
-            showToast('success', 'Appointment Declined', `${currentDeclineStudent} has been notified via email with your reason.`);
-            
-            // Remove the appointment row from the list
-            setTimeout(() => {
-                const rows = document.querySelectorAll('.appointment-row');
-                rows.forEach(row => {
-                    const studentName = row.querySelector('.apt-row-name');
-                    if (studentName && studentName.textContent === currentDeclineStudent) {
-                        row.style.opacity = '0';
-                        row.style.transform = 'translateX(-20px)';
-                        setTimeout(() => row.remove(), 300);
-                    }
-                });
-            }, 500);
-        });
+  async function loadWorkloadSnapshot() {
+    const container = document.getElementById('workloadSnapshot');
+    const wmsBlocks   = document.getElementById('wmsBlocks');
+    const wmsHours    = document.getElementById('wmsHours');
+    const wmsSubjects = document.getElementById('wmsSubjects');
+    if (!container) return;
+
+    try {
+      const r = await fetch('/instructor/workload/load');
+      const d = await r.json();
+      const subjects = Array.isArray(d.subjects) ? d.subjects : [];
+      const blocks   = d.blocks && typeof d.blocks === 'object' ? d.blocks : {};
+
+      const blockList  = Object.values(blocks).filter(b => !b.isSpan);
+      const totalBlocks = blockList.length;
+      const totalHours  = blockList.reduce((sum, b) => sum + (b.duration || 1), 0);
+      const usedIds     = [...new Set(blockList.map(b => b.subjectId))];
+      const usedSubjects = subjects.filter(s => usedIds.includes(s.id));
+
+      if (wmsBlocks)   wmsBlocks.textContent   = totalBlocks;
+      if (wmsHours)    wmsHours.textContent     = totalHours + 'h';
+      if (wmsSubjects) wmsSubjects.textContent  = usedSubjects.length;
+
+      if (!usedSubjects.length) {
+        container.innerHTML = `<div class="wl-empty">No workload set yet. <a href="/instructor/workload">Build your timetable →</a></div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="wl-subject-list">${
+        usedSubjects.slice(0, 5).map(s => `
+          <div class="wl-subject-row">
+            <span class="wl-subject-dot" style="background:${s.color || '#3b82f6'}"></span>
+            <span class="wl-subject-code">${esc(s.code)}</span>
+            <span class="wl-subject-name">${esc(s.name)}</span>
+          </div>`).join('')
+      }${usedSubjects.length > 5 ? `<div class="wl-empty" style="padding:.5rem 0">+${usedSubjects.length - 5} more subjects</div>` : ''}</div>`;
+
+    } catch (e) {
+      container.innerHTML = `<div class="wl-empty">Could not load workload. <a href="/instructor/workload">Open timetable →</a></div>`;
     }
+  }
 
-    // Toast Notification System
-    function showToast(type, title, message) {
-        const toastContainer = document.getElementById('toastContainer');
-        if (!toastContainer) return;
+  function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
 
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        
-        const icon = type === 'success' 
-            ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
-            : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
-        
-        toast.innerHTML = `
-            <div class="toast-icon">${icon}</div>
-            <div class="toast-content">
-                <p class="toast-title">${title}</p>
-                <p class="toast-message">${message}</p>
-            </div>
-        `;
-        
-        toastContainer.appendChild(toast);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
-            setTimeout(() => toast.remove(), 300);
-        }, 5000);
-    }
-
-    // Appointment Actions - Approve
-    document.querySelectorAll('.btn-icon-action.approve').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const aptId = this.dataset.id;
-            const studentName = this.dataset.student;
-            
-            // In production, this would be an API call
-            showToast('success', 'Appointment Approved', `${studentName}'s appointment has been confirmed. Confirmation email sent.`);
-            
-            // Remove the appointment row from the list
-            setTimeout(() => {
-                const row = this.closest('.appointment-row');
-                if (row) {
-                    row.style.opacity = '0';
-                    row.style.transform = 'translateX(-20px)';
-                    setTimeout(() => row.remove(), 300);
-                }
-            }, 500);
-        });
-    });
-
-    // Appointment Actions - Decline
-    document.querySelectorAll('.btn-icon-action.decline').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const aptId = this.dataset.id;
-            const studentName = this.dataset.student;
-            showModal(studentName, aptId);
-        });
-    });
+  /* ── Toast ── */
+  function showToast(type, title, message) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    const icon = type === 'success'
+      ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+      : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    el.innerHTML = `<div class="toast-icon">${icon}</div><div class="toast-content"><p class="toast-title">${title}</p><p class="toast-message">${message}</p></div>`;
+    container.appendChild(el);
+    setTimeout(() => {
+      el.style.transition = 'opacity .3s, transform .3s';
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(100%)';
+      setTimeout(() => el.remove(), 320);
+    }, 4500);
+  }
 
 });
-

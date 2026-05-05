@@ -495,3 +495,18 @@
         padding: 0.3rem 0.625rem;
     }
 }
+
+/* ── CSPC Logo in Sidebar ── */
+.cspc-logo-avatar {
+    background: white !important;
+    border: 2px solid var(--gray-200);
+    overflow: hidden;
+    padding: 2px;
+}
+
+.cspc-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 50%;
+}

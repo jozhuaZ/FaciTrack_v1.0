@@ -1,0 +1,335 @@
+<%- include('../../partials/header') %>
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+<style>
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+.emp-badge{display:inline-block;padding:.2rem .6rem;border-radius:999px;font-size:.7rem;font-weight:700;white-space:nowrap}
+.emp-badge.regular    {background:rgba(22,163,74,.12);color:#15803d}
+.emp-badge.parttime   {background:rgba(234,88,12,.1);color:#c2410c}
+.emp-badge.contractual{background:rgba(124,58,237,.1);color:#7c3aed}
+</style>
+
+<div class="instructor-layout">
+  <%- include('../../partials/superadmin-sidebar', { activePage: 'reports' }) %>
+  <main class="instructor-main">
+    <div class="main-container">
+
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Reports</h1>
+          <p class="page-subtitle">Institution-wide staff and department summary — all CSPC departments</p>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-overview">
+        <div class="stat-card-large confirmed">
+          <div class="stat-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Departments</p>
+            <h2 class="stat-card-value"><%= deptData.length %></h2>
+            <p class="stat-card-sublabel">CSPC colleges</p>
+          </div>
+        </div>
+        <div class="stat-card-large presence">
+          <div class="stat-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Total Users</p>
+            <h2 class="stat-card-value"><%= users.length %></h2>
+            <p class="stat-card-sublabel">All roles combined</p>
+          </div>
+        </div>
+        <div class="stat-card-large workload">
+          <div class="stat-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Active Accounts</p>
+            <h2 class="stat-card-value"><%= users.filter(u=>u.status==='active').length %></h2>
+            <p class="stat-card-sublabel">Enabled users</p>
+          </div>
+        </div>
+        <div class="stat-card-large pending">
+          <div class="stat-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Inactive Accounts</p>
+            <h2 class="stat-card-value"><%= users.filter(u=>u.status==='inactive').length %></h2>
+            <p class="stat-card-sublabel">Disabled users</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Department Summary + User Breakdown side by side -->
+      <div class="two-col">
+        <div class="content-card">
+          <div class="card-header"><h3 class="card-title">Department Summary</h3></div>
+          <div class="card-body" style="padding:0">
+            <div style="overflow-x:auto">
+              <table class="data-table">
+                <thead><tr><th>College</th><th>Sub-Admin</th><th>Dean</th><th>Instructors</th><th>Total</th><th>BLE</th></tr></thead>
+                <tbody>
+                  <% deptData.forEach(d => {
+                    const deptUsers = users.filter(u => u.department === d.name);
+                    const admins = deptUsers.filter(u => u.role === 'Admin').length;
+                    const deans  = deptUsers.filter(u => u.role === 'Dean').length;
+                    const instr  = deptUsers.filter(u => u.role === 'Instructor').length;
+                  %>
+                  <tr>
+                    <td style="font-weight:600;font-size:.8125rem"><%= d.name %></td>
+                    <td><%= admins %></td>
+                    <td><%= deans %></td>
+                    <td><%= instr %></td>
+                    <td style="font-weight:600"><%= deptUsers.length %></td>
+                    <td><span class="table-badge <%= d.bleDeployed?'confirmed':'declined' %>" style="font-size:.65rem"><%= d.bleStatusLabel || (d.bleDeployed?'Active':'Not Deployed') %></span></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <div class="card-header"><h3 class="card-title">Employment Type Breakdown</h3></div>
+          <div class="card-body">
+            <% ['Regular','Part-time','Contractual'].forEach(et => {
+              const cnt = users.filter(u => u.employmentType === et).length;
+              const pct = users.length ? Math.round(cnt/users.length*100) : 0;
+            %>
+            <div style="margin-bottom:1rem">
+              <div style="display:flex;justify-content:space-between;margin-bottom:.25rem">
+                <span style="font-size:.8125rem;font-weight:600;color:var(--gray-800)"><%= et %></span>
+                <span style="font-size:.8125rem;color:var(--gray-500)"><%= cnt %></span>
+              </div>
+              <div style="height:6px;background:var(--gray-100);border-radius:999px;overflow:hidden">
+                <div style="height:100%;border-radius:999px;background:var(--teal-gradient);width:<%= pct %>%;transition:width .4s"></div>
+              </div>
+            </div>
+            <% }); %>
+            <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:.8125rem;color:var(--gray-500)">Total instructors</span>
+              <span class="table-badge confirmed"><%= users.filter(u=>u.role==='Instructor').length %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full User Registry -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Full User Registry</h3>
+          <div style="display:flex;align-items:center;gap:.625rem">
+            <span style="font-size:.8125rem;color:var(--gray-500);font-weight:600">All Departments</span>
+            <button class="btn-header-action" id="btnExportUserRegistry" style="padding:.4rem .75rem;font-size:.78rem">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export PDF
+            </button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead>
+                <tr><th>#</th><th>Name</th><th>Role</th><th>Employment</th><th>Department</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <% users.forEach((u,i) => { %>
+                <tr>
+                  <td style="color:var(--gray-400);font-size:.8125rem"><%= i+1 %></td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:.625rem">
+                      <div class="apt-avatar-xs" style="width:30px;height:30px;font-size:.65rem;flex-shrink:0"><%= u.name.split(' ').map(n=>n[0]).join('').slice(0,2) %></div>
+                      <div>
+                        <p style="font-weight:600;font-size:.875rem;color:var(--gray-900);margin:0"><%= u.name %></p>
+                        <p style="font-size:.72rem;color:var(--gray-400);margin:0"><%= u.email %></p>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="table-badge <%= u.role==='Admin'?'workload':u.role==='Dean'?'pending':'confirmed' %>"><%= u.role==='Admin'?'Sub-Admin':u.role %></span></td>
+                  <td>
+                    <% var ec=u.employmentType==='Regular'?'regular':u.employmentType==='Part-time'?'parttime':'contractual'; %>
+                    <span class="emp-badge <%= ec %>"><%= u.employmentType %></span>
+                  </td>
+                  <td style="font-size:.8125rem;color:var(--gray-600)"><%= u.department %></td>
+                  <td><span class="table-badge <%= u.status==='active'?'confirmed':'declined' %>"><%= u.status==='active'?'Active':'Inactive' %></span></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CSPC Institutional Report Preview -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">CSPC Institutional Report Preview</h3>
+          <div style="display:flex;align-items:center;gap:.625rem">
+            <span style="font-size:.8125rem;color:var(--gray-500);font-weight:600">All Departments</span>
+            <button class="btn-header-action" id="btnExportInstitutionalReport" style="padding:.4rem .75rem;font-size:.78rem">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export PDF
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="report-preview">
+            <div class="report-header-block" style="display:flex;align-items:center;gap:1rem;text-align:left;padding:1.25rem 1.5rem">
+              <img src="/images/CSPC-logo.png" alt="CSPC" style="width:52px;height:52px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
+              <div>
+                <p class="report-institution">Camarines Sur Polytechnic Colleges</p>
+                <p class="report-college">Office of the Super Administrator</p>
+                <h4 class="report-title-block">Staff Registry Report — All Departments</h4>
+                <p class="report-period">Generated by FaciTrack · Super Administrator View</p>
+              </div>
+            </div>
+            <div style="padding:1.25rem 1.5rem">
+              <table class="data-table">
+                <thead><tr><th>Department</th><th>Sub-Admins</th><th>Deans</th><th>Instructors</th><th>Total Staff</th><th>BLE Status</th></tr></thead>
+                <tbody>
+                  <% deptData.forEach(d => {
+                    const du = users.filter(u => u.department === d.name);
+                  %>
+                  <tr>
+                    <td style="font-weight:600"><%= d.name %></td>
+                    <td><%= du.filter(u=>u.role==='Admin').length %></td>
+                    <td><%= du.filter(u=>u.role==='Dean').length %></td>
+                    <td><%= du.filter(u=>u.role==='Instructor').length %></td>
+                    <td style="font-weight:600"><%= du.length %></td>
+                    <td><span class="table-badge <%= d.bleDeployed?'confirmed':'declined' %>"><%= d.bleStatusLabel || (d.bleDeployed?'Active':'Not Deployed') %></span></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+              <p style="font-size:.75rem;color:var(--gray-400);margin-top:1rem;font-style:italic">Auto-generated by FaciTrack. Verify with department records before official submission.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>
+<script>
+function showToast(type,title,msg){
+  const c=document.getElementById('toastContainer'),t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML='<div class="toast-content"><p class="toast-title">'+title+'</p><p class="toast-message">'+msg+'</p></div>';
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},4000);
+}
+
+const REPORT_USERS = <%- JSON.stringify(users) %>;
+const REPORT_DEPTS = <%- JSON.stringify(deptData) %>;
+
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getExportLayoutCss(){
+  return `
+  @page { size: A4 portrait; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color:#111827; margin:0; font-size:12px; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  .report-wrap { border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; }
+  .report-head { display:flex; align-items:center; gap:12px; border-bottom:2px solid #0a3d62; padding:14px 16px; }
+  .logo { width:46px; height:46px; object-fit:contain; flex-shrink:0; }
+  .org { margin:0; font-size:11px; color:#6b7280; }
+  .office { margin:2px 0 0; font-size:11px; color:#6b7280; }
+  .title { margin:4px 0 0; font-size:17px; font-weight:700; color:#111827; }
+  .meta { margin:3px 0 0; font-size:11px; color:#6b7280; }
+  .report-body { padding:14px 16px; }
+  table { width:100%; border-collapse:collapse; font-size:11px; }
+  th { background:#f8fafc; color:#6b7280; text-transform:uppercase; letter-spacing:.04em; font-size:10px; text-align:left; border:1px solid #e5e7eb; padding:8px 10px; }
+  td { border:1px solid #e5e7eb; padding:8px 10px; color:#374151; vertical-align:middle; }
+  .bold { font-weight:700; color:#111827; }
+  .badge { display:inline-block; padding:3px 8px; border-radius:999px; font-size:10px; font-weight:700; }
+  .ok { background:rgba(22,163,74,.12); color:#15803d; }
+  .warn { background:rgba(107,114,128,.12); color:#374151; }
+  .foot { margin-top:10px; font-size:10px; color:#9ca3af; font-style:italic; }
+  `;
+}
+
+function openReportPreview(title, tableHeadHtml, tableBodyHtml, footNote){
+  const html = `<!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>${esc(title)}</title>
+    <style>${getExportLayoutCss()}</style>
+  </head>
+  <body>
+    <div class="report-wrap">
+      <div class="report-head">
+        <img src="/images/CSPC-logo.png" alt="CSPC" class="logo">
+        <div>
+          <p class="org">Camarines Sur Polytechnic Colleges</p>
+          <p class="office">Office of the Super Administrator</p>
+          <h1 class="title">${esc(title)}</h1>
+          <p class="meta">Generated by FaciTrack • Super Administrator View</p>
+        </div>
+      </div>
+      <div class="report-body">
+        <table>
+          <thead>${tableHeadHtml}</thead>
+          <tbody>${tableBodyHtml}</tbody>
+        </table>
+        <p class="foot">${esc(footNote)}</p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+
+  const win = window.open('', '_blank', 'width=1200,height=900');
+  if(!win){
+    showToast('error','Popup blocked','Please allow popups to preview and export PDF.');
+    return;
+  }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  setTimeout(function(){
+    win.focus();
+    win.print();
+  }, 500);
+}
+
+function exportUserRegistryPdf(){
+  const head = '<tr><th>#</th><th>Name</th><th>Role</th><th>Employment</th><th>Department</th><th>Status</th></tr>';
+  const body = REPORT_USERS.map(function(u, i){
+    const role = u.role === 'Admin' ? 'Sub-Admin' : u.role;
+    const statusClass = u.status === 'active' ? 'ok' : 'warn';
+    const statusLabel = u.status === 'active' ? 'Active' : 'Inactive';
+    return '<tr>'
+      + '<td>' + (i + 1) + '</td>'
+      + '<td><span class="bold">' + esc(u.name) + '</span><br><span style="font-size:10px;color:#9ca3af">' + esc(u.email) + '</span></td>'
+      + '<td>' + esc(role) + '</td>'
+      + '<td>' + esc(u.employmentType || '-') + '</td>'
+      + '<td>' + esc(u.department || '') + '</td>'
+      + '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span></td>'
+      + '</tr>';
+  }).join('');
+  openReportPreview('Full User Registry', head, body, 'Auto-generated by FaciTrack. Verify with department records before official submission.');
+}
+
+function exportInstitutionalReportPdf(){
+  const head = '<tr><th>Department</th><th>Sub-Admins</th><th>Deans</th><th>Instructors</th><th>Total Staff</th><th>BLE Status</th></tr>';
+  const body = REPORT_DEPTS.map(function(d){
+    const du = REPORT_USERS.filter(function(u){ return u.department === d.name; });
+    const bleActive = !!d.bleDeployed;
+    return '<tr>'
+      + '<td class="bold">' + esc(d.name) + '</td>'
+      + '<td>' + du.filter(function(u){ return u.role === 'Admin'; }).length + '</td>'
+      + '<td>' + du.filter(function(u){ return u.role === 'Dean'; }).length + '</td>'
+      + '<td>' + du.filter(function(u){ return u.role === 'Instructor'; }).length + '</td>'
+      + '<td class="bold">' + du.length + '</td>'
+      + '<td><span class="badge ' + (bleActive ? 'ok' : 'warn') + '">' + esc(d.bleStatusLabel || (bleActive ? 'Active' : 'Not Deployed')) + '</span></td>'
+      + '</tr>';
+  }).join('');
+  openReportPreview('CSPC Institutional Report', head, body, 'Auto-generated by FaciTrack. Verify with department records before official submission.');
+}
+
+document.getElementById('btnExportUserRegistry').addEventListener('click', exportUserRegistryPdf);
+document.getElementById('btnExportInstitutionalReport').addEventListener('click', exportInstitutionalReportPdf);
+</script>

@@ -1,10 +1,5 @@
 <%- include('../../partials/header') %>
 <link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
-<style>
-    html, body { overflow: hidden !important; height: 100vh !important; }
-    body { display: flex; flex-direction: column; }
-    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-</style>
 
 <div class="instructor-layout">
     <%- include('../../partials/instructor-sidebar', { activePage: 'presence', pendingCount: pendingCount }) %>
@@ -113,6 +108,10 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="pagination-bar">
+                    <span class="page-info" id="pageInfo"></span>
+                    <div class="pagination-controls" id="presencePgCtrl"></div>
+                </div>
             </div>
 
         </div>
@@ -123,6 +122,58 @@
 <%- include('../../partials/footer') %>
 <%- include('../../partials/script') %>
 <script>
+const ROWS_PER_PAGE = 10;
+let currentPage = 1;
+
+function getVisibleRows() {
+    const val = document.getElementById('logFilter').value;
+    return Array.from(document.querySelectorAll('#presenceTable tbody tr')).filter(row =>
+        val === 'all' || row.dataset.event === val
+    );
+}
+
+function renderPage() {
+    const rows = getVisibleRows();
+    const totalPages = Math.max(1, Math.ceil(rows.length / ROWS_PER_PAGE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    document.querySelectorAll('#presenceTable tbody tr').forEach(r => r.style.display = 'none');
+    rows.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE).forEach(r => r.style.display = '');
+
+    const total = rows.length;
+    const from = total ? ((currentPage - 1) * ROWS_PER_PAGE) + 1 : 0;
+    const to = Math.min(currentPage * ROWS_PER_PAGE, total);
+    document.getElementById('pageInfo').textContent = total ? `Showing ${from}–${to} of ${total}` : 'No results found';
+    const ctrl = document.getElementById('presencePgCtrl');
+    ctrl.innerHTML = '';
+    if (totalPages > 1) {
+        const prev = document.createElement('button');
+        prev.className = 'pg-btn pg-arrow';
+        prev.innerHTML = '&#8592;';
+        prev.disabled = currentPage === 1;
+        prev.addEventListener('click', () => { currentPage--; renderPage(); });
+        ctrl.appendChild(prev);
+
+        let s = Math.max(1, currentPage - 2);
+        let e = Math.min(totalPages, s + 4);
+        s = Math.max(1, e - 4);
+        for (let i = s; i <= e; i++) {
+            const b = document.createElement('button');
+            b.className = `pg-btn${i === currentPage ? ' active' : ''}`;
+            b.textContent = i;
+            b.addEventListener('click', () => { currentPage = i; renderPage(); });
+            ctrl.appendChild(b);
+        }
+
+        const next = document.createElement('button');
+        next.className = 'pg-btn pg-arrow';
+        next.innerHTML = '&#8594;';
+        next.disabled = currentPage >= totalPages;
+        next.addEventListener('click', () => { currentPage++; renderPage(); });
+        ctrl.appendChild(next);
+    }
+}
+
 function showToast(type, title, message) {
     const c = document.getElementById('toastContainer');
     const t = document.createElement('div');
@@ -132,12 +183,8 @@ function showToast(type, title, message) {
     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
 }
 
-document.getElementById('logFilter').addEventListener('change', function() {
-    const val = this.value;
-    document.querySelectorAll('#presenceTable tbody tr').forEach(row => {
-        row.style.display = (val === 'all' || row.dataset.event === val) ? '' : 'none';
-    });
-});
-
+document.getElementById('logFilter').addEventListener('change', () => { currentPage = 1; renderPage(); });
 document.getElementById('btnExportLogs').addEventListener('click', () => showToast('success', 'Exported', 'Presence logs exported successfully.'));
+
+renderPage();
 </script>

@@ -1,0 +1,329 @@
+<%- include('../../partials/header') %>
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+<style>
+    .apt-status-pending   { background:#fffbeb;color:#b45309;border:1px solid #fde68a; }
+    .apt-status-confirmed { background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0; }
+    .apt-status-declined  { background:#fef2f2;color:#dc2626;border:1px solid #fecaca; }
+    .apt-card { background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;box-shadow:var(--shadow-sm);display:flex;align-items:flex-start;gap:1rem;transition:box-shadow .2s; }
+    .apt-card:hover { box-shadow:var(--shadow-md); }
+    .apt-card-avatar { width:44px;height:44px;border-radius:50%;background:var(--primary-blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.875rem;flex-shrink:0; }
+    .apt-card-body { flex:1;min-width:0; }
+    .apt-card-faculty { font-weight:700;font-size:.9375rem;color:var(--gray-900);margin:0 0 .125rem; }
+    .apt-card-topic { font-size:.875rem;color:var(--gray-700);margin:0 0 .5rem; }
+    .apt-card-meta { display:flex;flex-wrap:wrap;gap:.75rem;font-size:.8125rem;color:var(--gray-500); }
+    .apt-card-meta span { display:flex;align-items:center;gap:.25rem; }
+    .apt-status-pill { padding:4px 12px;border-radius:var(--radius-full);font-size:.75rem;font-weight:700;letter-spacing:.3px;flex-shrink:0; }
+    .empty-appointments { text-align:center;padding:4rem 2rem;color:var(--gray-400); }
+    .empty-appointments svg { margin:0 auto 1rem;display:block; }
+    .empty-appointments p { font-size:.9rem;margin-bottom:1.25rem; }
+
+    /* ── Gate overlay ── */
+    .ref-gate { position:fixed;inset:0;background:rgba(10,30,60,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem; }
+    .ref-gate-card { position:relative;background:#fff;border-radius:var(--radius-xl);padding:2.25rem 2rem;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center; }
+    .ref-gate-icon { width:64px;height:64px;background:rgba(10,61,98,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem; }
+    .ref-gate-title { font-size:1.125rem;font-weight:700;color:var(--primary-blue);margin:0 0 .375rem; }
+    .ref-gate-desc { font-size:.875rem;color:var(--gray-600);margin:0 0 1.25rem;line-height:1.6; }
+    .ref-gate-error { background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:var(--radius-md);padding:.625rem .875rem;font-size:.8125rem;margin-bottom:.75rem;text-align:left; }
+    .ref-input-wrap { display:flex;gap:.5rem;margin-bottom:.75rem; }
+    .ref-input { flex:1;padding:.7rem 1rem;border:1.5px solid var(--gray-300);border-radius:var(--radius-md);font-size:.9375rem;font-family:var(--font-body);font-weight:700;letter-spacing:.05em;text-transform:uppercase;outline:none;text-align:center; }
+    .ref-input:focus { border-color:var(--primary-blue);box-shadow:0 0 0 3px rgba(10,61,98,.08); }
+    .btn-ref-verify { width:100%;padding:.75rem;background:var(--primary-blue);color:#fff;border:none;border-radius:var(--radius-md);font-size:.9375rem;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:background .2s; }
+    .btn-ref-verify:hover { background:var(--primary-dark); }
+    .ref-gate-hint { font-size:.75rem;color:var(--gray-500);margin-top:.625rem; }
+    .btn-gate-return { display:block;width:100%;padding:.65rem;background:#fff;color:var(--gray-700);border:1.5px solid var(--gray-300);border-radius:var(--radius-md);font-size:.875rem;font-weight:600;cursor:pointer;font-family:var(--font-body);text-decoration:none;text-align:center;margin-top:.875rem;transition:all .2s;box-sizing:border-box; }
+    .btn-gate-return:hover { border-color:var(--gray-400);background:var(--gray-50); }
+
+    /* ── Inactivity modal ── */
+    .inactivity-modal { position:fixed;inset:0;background:rgba(10,30,60,.65);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem; }
+    .inactivity-modal.show { display:flex; }
+    .inactivity-card { position:relative;background:#fff;border-radius:var(--radius-xl);padding:2rem 1.75rem;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);text-align:center; }
+    .overlay-close-btn { position:absolute;top:10px;right:10px;width:32px;height:32px;border:1px solid var(--gray-200);border-radius:8px;background:#fff;color:var(--gray-500);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s; }
+    .overlay-close-btn:hover { border-color:var(--gray-300);background:var(--gray-50);color:var(--gray-700); }
+    .inactivity-icon { width:56px;height:56px;background:#fffbeb;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .875rem; }
+    .inactivity-title { font-size:1rem;font-weight:700;color:var(--gray-900);margin:0 0 .375rem; }
+    .inactivity-desc { font-size:.875rem;color:var(--gray-600);margin:0 0 1.25rem;line-height:1.6; }
+    .btn-inactivity-ok { width:100%;padding:.75rem;background:var(--primary-blue);color:#fff;border:none;border-radius:var(--radius-md);font-size:.9375rem;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:background .2s; }
+    .btn-inactivity-ok:hover { background:var(--primary-dark); }
+
+    .page-content-blur { filter:blur(5px);pointer-events:none;user-select:none;transition:filter .3s; }
+    @media (max-width:640px) {
+        .appointments-filter-row { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; }
+        .appointments-filter-row .filter-tab { flex-shrink:0; white-space:nowrap; }
+        .ref-gate-card, .inactivity-card { padding:1.5rem 1.125rem; }
+        .ref-input-wrap { flex-direction:column; }
+    }
+    @media (max-width:480px) { .apt-card { flex-wrap:wrap; } .apt-status-pill { width:100%;text-align:center; } }
+</style>
+
+<div class="instructor-layout">
+    <%- include('../../partials/student-sidebar', { activePage: 'appointments', appointmentCount: 0 }) %>
+
+    <main class="instructor-main">
+        <div class="main-container">
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">My Appointments</h1>
+                    <p class="page-subtitle">Track all your consultation appointment requests and their status</p>
+                </div>
+                <div class="header-actions">
+                    <a href="/student/dashboard" class="btn-header-action primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Book New Appointment
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-overview page-content-blur" style="margin-bottom:1rem;" id="statsBlur">
+                <div class="stat-card-large pending"><div class="stat-card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-card-content"><p class="stat-card-label">Pending</p><h2 class="stat-card-value" id="countPending">0</h2><p class="stat-card-sublabel">Awaiting response</p></div></div>
+                <div class="stat-card-large confirmed"><div class="stat-card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div class="stat-card-content"><p class="stat-card-label">Confirmed</p><h2 class="stat-card-value" id="countConfirmed">0</h2><p class="stat-card-sublabel">Approved by instructor</p></div></div>
+                <div class="stat-card-large presence"><div class="stat-card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="stat-card-content"><p class="stat-card-label">Declined</p><h2 class="stat-card-value" id="countDeclined">0</h2><p class="stat-card-sublabel">Not approved</p></div></div>
+                <div class="stat-card-large workload"><div class="stat-card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="stat-card-content"><p class="stat-card-label">Total</p><h2 class="stat-card-value" id="countTotal">0</h2><p class="stat-card-sublabel">All requests</p></div></div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="content-card page-content-blur" style="margin-bottom:1rem;" id="filterBlur">
+                <div class="card-body" style="padding:0.75rem 1.25rem;">
+                    <div class="appointments-filter-row" style="display:flex;gap:0.5rem;align-items:center;">
+                        <button class="filter-tab active" data-filter="all">All</button>
+                        <button class="filter-tab" data-filter="pending">Pending</button>
+                        <button class="filter-tab" data-filter="confirmed">Confirmed</button>
+                        <button class="filter-tab" data-filter="declined">Declined</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointments List -->
+            <div class="content-card" style="flex:1;min-height:0;">
+                <div id="appointmentsBlurWrap" class="page-content-blur" style="height:100%;">
+                    <div class="card-body" style="padding:1.25rem;overflow-y:auto;height:100%;">
+                        <div id="appointmentsList"></div>
+                        <div class="empty-appointments" id="emptyState" style="display:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            <p>No appointments found. Book a consultation with a faculty member to get started.</p>
+                            <a href="/student/dashboard" class="btn-book" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.625rem 1.25rem;background:var(--primary-blue);color:white;border-radius:var(--radius-md);font-size:0.875rem;font-weight:600;text-decoration:none;">Browse Faculty</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- Reference Number Gate -->
+<div class="ref-gate" id="refGate">
+    <div class="ref-gate-card">
+        <button type="button" class="overlay-close-btn" id="refGateCloseBtn" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="ref-gate-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h3 class="ref-gate-title">Enter Your Reference Number</h3>
+        <p class="ref-gate-desc">Enter the reference number from your booking confirmation to view your appointments.</p>
+
+        <div id="refGateError" class="ref-gate-error" style="display:none;"></div>
+
+        <div class="ref-input-wrap">
+            <input type="text" class="ref-input" id="refInput" placeholder="FT-XXXXXX" maxlength="9" autocomplete="off">
+        </div>
+        <button class="btn-ref-verify" id="refVerifyBtn">View My Appointments</button>
+        <p class="ref-gate-hint">Your reference number was shown after booking. For testing, use: <strong>FT-123456</strong></p>
+
+        <a href="/student/dashboard" class="btn-gate-return">&#8592; Return to Faculty Directory</a>
+    </div>
+</div>
+
+<!-- Inactivity Modal -->
+<div class="inactivity-modal" id="inactivityModal">
+    <div class="inactivity-card">
+        <button type="button" class="overlay-close-btn" id="inactivityCloseBtn" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="inactivity-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3 class="inactivity-title">Session Expired</h3>
+        <p class="inactivity-desc">You've been inactive for 10 minutes. For your security, you'll be redirected to the Faculty Directory.</p>
+        <button class="btn-inactivity-ok" id="inactivityOkBtn">OK, Got it</button>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>
+<script>
+let allAppointments = [];
+let currentFilter = 'all';
+let gateVerified = false;
+let inactivityTimer = null;
+const INACTIVITY_MS = 10 * 60 * 1000; // 10 minutes
+const DEMO_REF = 'FT-123456';
+
+// ── Reference Number Gate ──
+const refGate    = document.getElementById('refGate');
+const refInput   = document.getElementById('refInput');
+const refError   = document.getElementById('refGateError');
+const inactModal = document.getElementById('inactivityModal');
+document.getElementById('refGateCloseBtn').addEventListener('click', () => {
+    window.location.href = '/student/dashboard';
+});
+
+function showRefError(msg) { refError.textContent = msg; refError.style.display = 'block'; }
+function hideRefError()    { refError.style.display = 'none'; }
+
+// Format input as FT-XXXXXX automatically
+refInput.addEventListener('input', function() {
+    let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (val.startsWith('FT')) val = val.slice(2);
+    if (val.length > 6) val = val.slice(0, 6);
+    this.value = val.length > 0 ? 'FT-' + val : '';
+    hideRefError();
+});
+
+refInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('refVerifyBtn').click();
+});
+
+document.getElementById('refVerifyBtn').addEventListener('click', () => {
+    const val = refInput.value.trim().toUpperCase();
+    if (!val || val.length < 9) {
+        showRefError('Please enter a valid reference number (e.g. FT-123456).');
+        return;
+    }
+    const validFormat = /^FT-[A-Z0-9]{6}$/.test(val);
+    if (!validFormat) {
+        showRefError('Invalid reference number format. Use FT-XXXXXX.');
+        return;
+    }
+    // Check localStorage refs first (client-side bookings)
+    const storedRefs = JSON.parse(localStorage.getItem('studentRefs') || '[]');
+    if (storedRefs.includes(val)) {
+        hideRefError();
+        unlockPage();
+        return;
+    }
+    // Validate against server
+    fetch(`/student/ref/validate?ref=${encodeURIComponent(val)}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.valid) { hideRefError(); unlockPage(); }
+            else showRefError('Reference number not found. Please check and try again.');
+        })
+        .catch(() => {
+            // Offline fallback — accept any valid format
+            hideRefError();
+            unlockPage();
+        });
+});
+
+function unlockPage() {
+    gateVerified = true;
+    refGate.style.display = 'none';
+    document.querySelectorAll('.page-content-blur').forEach(el => {
+        el.classList.remove('page-content-blur');
+        el.style.pointerEvents = '';
+        el.style.userSelect = '';
+    });
+    loadAppointments();
+    startInactivityTimer();
+}
+
+// ── Inactivity Timer ──
+function startInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(showInactivityModal, INACTIVITY_MS);
+}
+
+function resetInactivityTimer() {
+    if (!gateVerified) return;
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(showInactivityModal, INACTIVITY_MS);
+}
+
+function showInactivityModal() {
+    inactModal.classList.add('show');
+}
+
+// Reset timer on any user activity
+['mousemove','keydown','click','scroll','touchstart'].forEach(evt => {
+    document.addEventListener(evt, resetInactivityTimer, { passive: true });
+});
+
+document.getElementById('inactivityOkBtn').addEventListener('click', () => {
+    inactModal.classList.remove('show');
+    window.location.href = '/student/dashboard';
+});
+document.getElementById('inactivityCloseBtn').addEventListener('click', () => {
+    inactModal.classList.remove('show');
+    window.location.href = '/student/dashboard';
+});
+
+// ── Re-lock on page visibility change (tab switch / navigate away) ──
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && gateVerified) {
+        // Page hidden — start a shorter re-lock timer (30s)
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(showInactivityModal, 30 * 1000);
+    } else if (!document.hidden && gateVerified) {
+        resetInactivityTimer();
+    }
+});
+
+// ── Appointments Logic ──
+function loadAppointments() {
+    allAppointments = JSON.parse(localStorage.getItem('studentAppointments') || '[]');
+    updateStats();
+    renderAppointments();
+}
+
+function updateStats() {
+    document.getElementById('countPending').textContent   = allAppointments.filter(a => a.status === 'pending').length;
+    document.getElementById('countConfirmed').textContent = allAppointments.filter(a => a.status === 'confirmed').length;
+    document.getElementById('countDeclined').textContent  = allAppointments.filter(a => a.status === 'declined').length;
+    document.getElementById('countTotal').textContent     = allAppointments.length;
+}
+
+function renderAppointments() {
+    const list  = document.getElementById('appointmentsList');
+    const empty = document.getElementById('emptyState');
+    const filtered = currentFilter === 'all' ? allAppointments : allAppointments.filter(a => a.status === currentFilter);
+    if (filtered.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = filtered.map(apt => {
+        const initials    = apt.facultyName.split(' ').map(n => n[0]).join('');
+        const statusClass = `apt-status-${apt.status}`;
+        const statusLabel = apt.status.charAt(0).toUpperCase() + apt.status.slice(1);
+        return `
+        <div class="apt-card" style="margin-bottom:.75rem;">
+            <div class="apt-card-avatar">${initials}</div>
+            <div class="apt-card-body">
+                <p class="apt-card-faculty">${apt.facultyName}</p>
+                <p class="apt-card-topic">${apt.topic}</p>
+                <div class="apt-card-meta">
+                    <span><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${apt.day}</span>
+                    <span><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${apt.time}</span>
+                    <span>${apt.duration}</span>
+                    <span>Ref: <strong>${apt.refNumber || '—'}</strong></span>
+                </div>
+            </div>
+            <span class="apt-status-pill ${statusClass}">${statusLabel}</span>
+        </div>`;
+    }).join('');
+}
+
+document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.dataset.filter;
+        if (gateVerified) renderAppointments();
+    });
+});
+</script>

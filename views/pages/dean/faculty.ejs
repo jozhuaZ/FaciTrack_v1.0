@@ -1,185 +1,728 @@
 <%- include('../../partials/header') %>
-    <link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
-    <style>
-        html,
-        body {
-            overflow: hidden !important;
-            height: 100vh !important;
-        }
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+<style>
+/* ── View toggle ── */
+.view-toggle{display:flex;gap:.375rem;background:var(--gray-100);border-radius:var(--radius-md);padding:3px}
+.view-btn{padding:.375rem .875rem;border:none;border-radius:calc(var(--radius-md) - 2px);font-size:.8125rem;font-weight:600;cursor:pointer;font-family:var(--font-body);color:var(--gray-600);background:transparent;transition:all .18s;display:flex;align-items:center;gap:.375rem}
+.view-btn.active{background:#fff;color:var(--primary-blue);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+/* ── Card grid ── */
+.mon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.fac-card{background:#fff;border:1.5px solid var(--gray-200);border-radius:14px;padding:1.1rem 1.25rem;display:flex;align-items:center;gap:.875rem;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:all .2s;cursor:pointer}
+.fac-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.1);transform:translateY(-2px)}
+.fac-card.in-room{border-color:rgba(34,197,94,.35);background:linear-gradient(135deg,#fff,rgba(34,197,94,.03))}
+.fac-card.out-of-room{opacity:.78}
+.fac-avatar{width:44px;height:44px;border-radius:50%;background:var(--teal-gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+.fac-card.out-of-room .fac-avatar{background:var(--gray-300)}
+.fac-info{flex:1;min-width:0}
+.fac-name{font-size:.9rem;font-weight:700;color:var(--gray-900);margin:0 0 .1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fac-pos{font-size:.75rem;color:var(--gray-500);margin:0 0 .3rem}
+.fac-room{display:flex;align-items:center;gap:.3rem;font-size:.78rem;color:var(--primary-blue);font-weight:600}
+.fac-card.out-of-room .fac-room{color:var(--gray-500)}
+.fac-time{font-size:.7rem;color:var(--gray-400);margin-top:.2rem}
+.status-pill{display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .65rem;border-radius:999px;font-size:.65rem;font-weight:700;flex-shrink:0}
+.status-pill.in{background:rgba(34,197,94,.12);color:#15803d}
+.status-pill.out{background:rgba(107,114,128,.12);color:#374151}
+.status-pill .dot{width:6px;height:6px;border-radius:50%}
+.status-pill.in .dot{background:#16a34a;animation:blink 1.5s infinite}
+.status-pill.out .dot{background:#9ca3af}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+/* ── Section divider ── */
+.sec-div{display:flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.06em;margin:.25rem 0 .625rem}
+.sec-div::after{content:'';flex:1;height:1px;background:var(--gray-200)}
+.sec-count{background:var(--gray-100);color:var(--gray-600);border-radius:999px;padding:1px 8px;font-size:.65rem}
+/* ── Full-screen overlay ── */
+.preview-overlay{display:none;position:fixed;inset:0;background:#0a1628;z-index:2000;flex-direction:column}
+.preview-overlay.open{display:flex}
+.preview-box{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden}
+.preview-header{padding:1rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between;background:#0d1f3c;flex-shrink:0}
+.preview-title{font-size:1.1rem;font-weight:800;color:#fff;margin:0}
+.preview-close{width:36px;height:36px;border:none;background:rgba(255,255,255,.1);border-radius:8px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.preview-close:hover{background:rgba(255,255,255,.2)}
+.preview-body{flex:1;overflow-y:auto;padding:1.5rem;background:#0a1628}
+.fs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+.fs-card{background:#0d1f3c;border:1.5px solid rgba(255,255,255,.08);border-radius:14px;padding:1rem 1.125rem;display:flex;align-items:center;gap:.875rem;transition:all .2s}
+.fs-card.in{border-color:rgba(34,197,94,.4);background:linear-gradient(135deg,#0d1f3c,rgba(34,197,94,.06))}
+.fs-card.out{opacity:.65}
+.fs-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1e88e5,#0a3d62);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0}
+.fs-card.out .fs-avatar{background:#1e2d45}
+.fs-info{flex:1;min-width:0}
+.fs-name{font-size:.875rem;font-weight:700;color:#fff;margin:0 0 .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fs-pos{font-size:.72rem;color:rgba(255,255,255,.45);margin:0 0 .25rem}
+.fs-room{font-size:.75rem;color:#60a5fa;font-weight:600;display:flex;align-items:center;gap:.25rem}
+.fs-card.out .fs-room{color:rgba(255,255,255,.35)}
+.fs-time{font-size:.68rem;color:rgba(255,255,255,.3);margin-top:.15rem}
+.fs-pill{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:999px;font-size:.62rem;font-weight:700;flex-shrink:0}
+.fs-pill.in{background:rgba(34,197,94,.18);color:#4ade80}
+.fs-pill.out{background:rgba(107,114,128,.18);color:#9ca3af}
+.fs-pill .dot{width:5px;height:5px;border-radius:50%}
+.fs-pill.in .dot{background:#4ade80;animation:blink 1.5s infinite}
+.fs-pill.out .dot{background:#6b7280}
+.fs-section-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin:0 0 .75rem;display:flex;align-items:center;gap:.5rem}
+.fs-section-title.green{color:#4ade80}
+.fs-section-title.gray{color:rgba(255,255,255,.35)}
+.fs-dot-live{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:blink 1.5s infinite}
+.fs-dot-out{width:7px;height:7px;border-radius:50%;background:#6b7280}
+.fs-stats-bar{display:flex;gap:1rem;padding:.75rem 1.5rem;background:#0d1f3c;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.fs-stat{display:flex;align-items:center;gap:.5rem}
+.fs-stat-val{font-size:1.25rem;font-weight:800;color:#fff}
+.fs-stat-lbl{font-size:.7rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.05em}
+.fs-stat-dot{width:8px;height:8px;border-radius:50%}
+.fs-stat-dot.green{background:#4ade80;animation:blink 1.5s infinite}
+.fs-stat-dot.gray{background:#6b7280}
+/* ── Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:1rem;font-weight:700;color:var(--gray-900);margin:0}
+.modal-close-btn{width:32px;height:32px;border:none;background:var(--gray-100);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray-500);transition:all .15s}
+.modal-close-btn:hover{background:var(--gray-200);color:var(--gray-800)}
+.modal-body{padding:1.25rem 1.5rem}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--gray-100);display:flex;gap:.625rem;justify-content:flex-end}
+.modal-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
+.modal-form-grid .full{grid-column:1/-1}
+.modal-label{font-size:.75rem;font-weight:600;color:var(--gray-700);display:block;margin-bottom:.3rem}
+.modal-input,.modal-select{width:100%;padding:.5rem .75rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-md);font-size:.875rem;font-family:var(--font-body);color:var(--gray-900);background:#fff;outline:none;transition:border-color .15s;box-sizing:border-box}
+.modal-input:focus,.modal-select:focus{border-color:var(--primary-blue)}
+.btn-modal-primary{padding:.5rem 1.25rem;background:var(--teal-gradient);color:#fff;border:none;border-radius:var(--radius-md);font-size:.875rem;font-weight:600;font-family:var(--font-body);cursor:pointer;transition:all .15s}
+.btn-modal-primary:hover{opacity:.9}
+.btn-modal-cancel{padding:.5rem 1.25rem;background:#fff;color:var(--gray-700);border:1.5px solid var(--gray-200);border-radius:var(--radius-md);font-size:.875rem;font-weight:600;font-family:var(--font-body);cursor:pointer;transition:all .15s}
+.btn-modal-cancel:hover{border-color:var(--gray-400)}
+.btn-modal-danger{padding:.5rem 1.25rem;background:#dc2626;color:#fff;border:none;border-radius:var(--radius-md);font-size:.875rem;font-weight:600;font-family:var(--font-body);cursor:pointer;transition:all .15s}
+.btn-modal-danger:hover{background:#b91c1c}
+/* ── Detail modal ── */
+.detail-header{display:flex;align-items:center;gap:1rem;padding:1.5rem;border-bottom:1px solid var(--gray-100)}
+.detail-avatar{width:60px;height:60px;border-radius:50%;background:var(--teal-gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.25rem;flex-shrink:0}
+.detail-name{font-size:1.0625rem;font-weight:700;color:var(--gray-900);margin:0 0 .2rem}
+.detail-pos{font-size:.8125rem;color:var(--gray-500);margin:0}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem;padding:1.25rem 1.5rem}
+.detail-item label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-400);display:block;margin-bottom:.2rem}
+.detail-item p{font-size:.875rem;color:var(--gray-900);font-weight:600;margin:0}
+.detail-item.full{grid-column:1/-1}
+/* ── Table action buttons ── */
+.tbl-btn{padding:.3rem .625rem;border:1.5px solid var(--gray-200);border-radius:6px;background:#fff;font-size:.72rem;font-weight:600;cursor:pointer;font-family:var(--font-body);color:var(--gray-600);transition:all .15s;display:inline-flex;align-items:center;gap:.3rem}
+.tbl-btn:hover{border-color:var(--primary-blue);color:var(--primary-blue)}
+.tbl-btn.danger:hover{border-color:#dc2626;color:#dc2626}
+</style>
 
-        body {
-            display: flex;
-            flex-direction: column;
-        }
+<div class="instructor-layout">
+  <%- include('../../partials/dean-sidebar', { activePage: 'faculty' }) %>
+  <main class="instructor-main">
+    <div class="main-container">
 
-        main {
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-        }
-    </style>
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Faculty</h1>
+          <p class="page-subtitle">Real-time BLE presence — College of Computer Studies</p>
+        </div>
+        <div class="header-actions">
+          <div class="view-toggle" id="viewToggle">
+            <button class="view-btn active" data-view="cards" id="btnCards">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              Cards
+            </button>
+            <button class="view-btn" data-view="table" id="btnTable">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              Table
+            </button>
+          </div>
+          <select id="filterStatus" style="padding:.5rem .875rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-md);font-size:.875rem;font-family:var(--font-body);background:#fff;color:var(--gray-800);outline:none;cursor:pointer">
+            <option value="all">All Faculty</option>
+            <option value="in-room">In Room Only</option>
+            <option value="out-of-room">Out of Room Only</option>
+          </select>
+          <button class="btn-header-action primary" id="btnFullPreview">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            Full Screen
+          </button>
+          <button class="btn-header-action primary" id="btnAddFaculty">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Instructor
+          </button>
+        </div>
+      </div>
 
-    <div class="instructor-layout">
-        <%- include('../../partials/dean-sidebar', { activePage: 'faculty' }) %>
+      <!-- Stats -->
+      <div class="stats-overview">
+        <div class="stat-card-large confirmed">
+          <div class="stat-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Currently In Room</p>
+            <h2 class="stat-card-value"><%= faculty.filter(f=>f.bleStatus==='in-room').length %></h2>
+            <p class="stat-card-sublabel">of <%= faculty.length %> total faculty</p>
+          </div>
+        </div>
+        <div class="stat-card-large presence">
+          <div class="stat-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Out of Room</p>
+            <h2 class="stat-card-value"><%= faculty.filter(f=>f.bleStatus==='out-of-room').length %></h2>
+            <p class="stat-card-sublabel">Not detected</p>
+          </div>
+        </div>
+        <div class="stat-card-large workload">
+          <div class="stat-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Total Faculty</p>
+            <h2 class="stat-card-value"><%= faculty.length %></h2>
+            <p class="stat-card-sublabel">Registered in system</p>
+          </div>
+        </div>
+      </div>
 
-            <main class="instructor-main">
-                <div class="main-container">
-
-                    <div class="page-header">
-                        <div>
-                            <h1 class="page-title">Faculty</h1>
-                            <p class="page-subtitle">Real-time faculty presence status for all faculty members</p>
-                        </div>
-                        <div class="header-actions">
-                            <div class="ble-live-status in-room"
-                                style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);font-size:0.8125rem;">
-                                <span class="ble-indicator-mini in-room"><span class="ble-pulse-mini"></span><span
-                                        class="ble-dot-mini"></span></span>
-                                <span>
-                                    <%= faculty.filter(f=> f.bleStatus === 'in-room').length %> of <%= faculty.length %>
-                                            In Room
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Stats -->
-                    <div class="stats-overview">
-                        <div class="stat-card-large confirmed">
-                            <div class="stat-card-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                            </div>
-                            <div class="stat-card-content">
-                                <p class="stat-card-label">In Room</p>
-                                <h2 class="stat-card-value">
-                                    <%= faculty.filter(f=> f.bleStatus === 'in-room').length %>
-                                </h2>
-                                <p class="stat-card-sublabel">BLE detected</p>
-                            </div>
-                        </div>
-                        <div class="stat-card-large presence">
-                            <div class="stat-card-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                                    <circle cx="12" cy="10" r="3" />
-                                </svg>
-                            </div>
-                            <div class="stat-card-content">
-                                <p class="stat-card-label">Out of Room</p>
-                                <h2 class="stat-card-value">
-                                    <%= faculty.filter(f=> f.bleStatus === 'out-of-room').length %>
-                                </h2>
-                                <p class="stat-card-sublabel">Not detected</p>
-                            </div>
-                        </div>
-                        <div class="stat-card-large workload">
-                            <div class="stat-card-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                    <circle cx="9" cy="7" r="4" />
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                </svg>
-                            </div>
-                            <div class="stat-card-content">
-                                <p class="stat-card-label">Total Faculty</p>
-                                <h2 class="stat-card-value">
-                                    <%= faculty.length %>
-                                </h2>
-                                <p class="stat-card-sublabel">Registered in system</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Faculty Table -->
-                    <div class="content-card">
-                        <div class="card-header">
-                            <h3 class="card-title">Faculty Directory</h3>
-                            <div style="display:flex;gap:0.5rem;align-items:center;">
-                                <select class="modal-select" id="statusFilter"
-                                    style="padding:0.375rem 0.75rem;font-size:0.8125rem;">
-                                    <option value="all">All Status</option>
-                                    <option value="in-room">In Room</option>
-                                    <option value="out-of-room">Out of Room</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="card-body" style="padding:0;">
-                            <table class="data-table" id="facultyTable">
-                                <thead>
-                                    <tr>
-                                        <th>Faculty</th>
-                                        <th>Department</th>
-                                        <th>Office / Room</th>
-                                        <th>BLE Status</th>
-                                        <th>Last Detected</th>
-                                        <th>Consultations (Month)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% faculty.forEach(f=> { %>
-                                        <tr data-status="<%= f.bleStatus %>">
-                                            <td>
-                                                <div style="display:flex;align-items:center;gap:0.75rem;">
-                                                    <div class="apt-avatar-xs">
-                                                        <%= f.name.split(' ').map(n => n[0]).join('') %></div>
-                                        <div>
-                                            <p style="font-weight:600;font-size:0.875rem;color:var(--gray-900);margin:0;"><%= f.name %></p>
-                                            <p style="font-size:0.75rem;color:var(--gray-500);margin:0;"><%= f.position %></p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><%= f.department %></td>
-                                <td><%= f.officeRoom %></td>
-                                <td>
-                                    <div style="display:flex;align-items:center;gap:0.5rem;">
-                                        <span class="ble-indicator-mini <%= f.bleStatus %>">
-                                            <% if (f.bleStatus === ' in-room') { %><span class="ble-pulse-mini"></span>
-                                                            <% } %>
-                                                                <span class="ble-dot-mini"></span>
-                                                                </span>
-                                                                <span
-                                                                    class="table-badge <%= f.bleStatus === 'in-room' ? 'confirmed' : 'declined' %>">
-                                                                    <%= f.bleStatus==='in-room' ? 'In Room'
-                                                                        : 'Out of Room' %>
-                                                                </span>
-                                                    </div>
-                                            </td>
-                                            <td>
-                                                <%= f.bleLastDetected %>
-                                            </td>
-                                            <td>
-                                                <%= f.consultationsThisMonth %>
-                                            </td>
-                                        </tr>
-                                        <% }); %>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
+      <!-- ── CARD VIEW ── -->
+      <div id="cardView">
+        <div id="inRoomSection">
+          <div class="sec-div">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Currently In Room
+            <span class="sec-count" id="inRoomCount"><%= faculty.filter(f=>f.bleStatus==='in-room').length %></span>
+          </div>
+          <div class="mon-grid" id="inRoomGrid">
+            <% faculty.filter(f=>f.bleStatus==='in-room').forEach(f => { %>
+            <div class="fac-card in-room" data-status="in-room" data-id="<%= f.id %>" onclick="openDetail(<%= JSON.stringify(f) %>)">
+              <div class="fac-avatar"><%= f.name.split(' ').map(n=>n[0]).join('') %></div>
+              <div class="fac-info">
+                <p class="fac-name"><%= f.name %></p>
+                <p class="fac-pos"><%= f.position %></p>
+                <div class="fac-room">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <%= f.officeRoom %>
                 </div>
-            </main>
-    </div>
+                <p class="fac-time">Detected <%= f.bleLastDetected %></p>
+              </div>
+              <span class="status-pill in"><span class="dot"></span>In Room</span>
+            </div>
+            <% }); %>
+          </div>
+        </div>
 
-    <div class="toast-container" id="toastContainer"></div>
-    <%- include('../../partials/footer') %>
-        <%- include('../../partials/script') %>
-            <script>
-                document.getElementById('statusFilter').addEventListener('change', function () {
-                    const val = this.value;
-                    document.querySelectorAll('#facultyTable tbody tr').forEach(row => {
-                        row.style.display = (val === 'all' || row.dataset.status === val) ? '' : 'none';
-                    });
-                });
-            </script>
+        <div id="outRoomSection" style="margin-top:.5rem">
+          <div class="sec-div">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Out of Room
+            <span class="sec-count" id="outRoomCount"><%= faculty.filter(f=>f.bleStatus==='out-of-room').length %></span>
+          </div>
+          <div class="mon-grid" id="outRoomGrid">
+            <% faculty.filter(f=>f.bleStatus==='out-of-room').forEach(f => { %>
+            <div class="fac-card out-of-room" data-status="out-of-room" data-id="<%= f.id %>" onclick="openDetail(<%= JSON.stringify(f) %>)">
+              <div class="fac-avatar"><%= f.name.split(' ').map(n=>n[0]).join('') %></div>
+              <div class="fac-info">
+                <p class="fac-name"><%= f.name %></p>
+                <p class="fac-pos"><%= f.position %></p>
+                <div class="fac-room">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <%= f.officeRoom %>
+                </div>
+                <p class="fac-time">Last seen <%= f.bleLastDetected %></p>
+              </div>
+              <span class="status-pill out"><span class="dot"></span>Out</span>
+            </div>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TABLE VIEW ── -->
+      <div id="tableView" style="display:none">
+        <div class="content-card">
+          <div class="card-header">
+            <h3 class="card-title">Faculty Directory</h3>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table" id="facultyTable">
+              <thead>
+                <tr>
+                  <th>Faculty</th>
+                  <th>Position</th>
+                  <th>Office / Room</th>
+                  <th>BLE Status</th>
+                  <th>Last Detected</th>
+                  <th>Consultations (Month)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="facultyTbody">
+                <% faculty.forEach(f => { %>
+                <tr data-status="<%= f.bleStatus %>" data-id="<%= f.id %>">
+                  <td>
+                    <div style="display:flex;align-items:center;gap:.75rem">
+                      <div class="apt-avatar-xs"><%= f.name.split(' ').map(n=>n[0]).join('') %></div>
+                      <p style="font-weight:600;font-size:.875rem;color:var(--gray-900);margin:0"><%= f.name %></p>
+                    </div>
+                  </td>
+                  <td style="font-size:.8125rem;color:var(--gray-600)"><%= f.position %></td>
+                  <td style="font-size:.8125rem"><%= f.officeRoom %></td>
+                  <td>
+                    <span class="table-badge <%= f.bleStatus==='in-room'?'confirmed':'declined' %>">
+                      <%= f.bleStatus==='in-room'?'In Room':'Out of Room' %>
+                    </span>
+                  </td>
+                  <td style="font-size:.8125rem;color:var(--gray-500)"><%= f.bleLastDetected %></td>
+                  <td style="font-size:.875rem;font-weight:600;color:var(--gray-900)"><%= f.consultationsThisMonth %></td>
+                  <td>
+                    <div style="display:flex;gap:.375rem">
+                      <button class="tbl-btn" onclick="openDetail(<%= JSON.stringify(f) %>)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        View
+                      </button>
+                      <button class="tbl-btn danger" onclick="confirmDelete(<%= f.id %>, '<%= f.name.replace(/'/g, "\\'") %>')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ── Full Screen Preview ── -->
+<div class="preview-overlay" id="previewOverlay">
+  <div class="preview-box">
+    <div class="preview-header">
+      <div style="display:flex;align-items:center;gap:.875rem">
+        <img src="/images/CSPC-logo.png" alt="CSPC" style="width:32px;height:32px;object-fit:contain;opacity:.85" onerror="this.style.display='none'">
+        <div>
+          <h3 class="preview-title">Live Room Status — CCS Faculty</h3>
+          <p style="font-size:.72rem;color:rgba(255,255,255,.4);margin:.1rem 0 0">Real-time BLE detection · College of Computer Studies</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.625rem">
+        <span id="fsTimestamp" style="font-size:.72rem;color:rgba(255,255,255,.35)"></span>
+        <button class="preview-close" id="previewClose" title="Exit (Esc)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="fs-stats-bar">
+      <div class="fs-stat"><span class="fs-stat-dot green"></span><span class="fs-stat-val" id="fsInCount"><%= faculty.filter(f=>f.bleStatus==='in-room').length %></span><span class="fs-stat-lbl">In Room</span></div>
+      <div class="fs-stat"><span class="fs-stat-dot gray"></span><span class="fs-stat-val" id="fsOutCount"><%= faculty.filter(f=>f.bleStatus==='out-of-room').length %></span><span class="fs-stat-lbl">Out of Room</span></div>
+      <div class="fs-stat"><span class="fs-stat-val"><%= faculty.length %></span><span class="fs-stat-lbl">Total Faculty</span></div>
+    </div>
+    <div class="preview-body">
+      <div style="margin-bottom:1.5rem">
+        <div class="fs-section-title green"><span class="fs-dot-live"></span>Currently In Room (<%= faculty.filter(f=>f.bleStatus==='in-room').length %>)</div>
+        <div class="fs-grid">
+          <% faculty.filter(f=>f.bleStatus==='in-room').forEach(f => { %>
+          <div class="fs-card in">
+            <div class="fs-avatar"><%= f.name.split(' ').map(n=>n[0]).join('').slice(0,2) %></div>
+            <div class="fs-info">
+              <p class="fs-name"><%= f.name %></p>
+              <p class="fs-pos"><%= f.position %></p>
+              <div class="fs-room"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><%= f.officeRoom %></div>
+              <p class="fs-time">Detected <%= f.bleLastDetected %></p>
+            </div>
+            <span class="fs-pill in"><span class="dot"></span>In Room</span>
+          </div>
+          <% }); %>
+          <% if(!faculty.filter(f=>f.bleStatus==='in-room').length){ %>
+          <p style="font-size:.82rem;color:rgba(255,255,255,.3);padding:1rem 0">No faculty currently in room.</p>
+          <% } %>
+        </div>
+      </div>
+      <div>
+        <div class="fs-section-title gray"><span class="fs-dot-out"></span>Out of Room (<%= faculty.filter(f=>f.bleStatus==='out-of-room').length %>)</div>
+        <div class="fs-grid">
+          <% faculty.filter(f=>f.bleStatus==='out-of-room').forEach(f => { %>
+          <div class="fs-card out">
+            <div class="fs-avatar"><%= f.name.split(' ').map(n=>n[0]).join('').slice(0,2) %></div>
+            <div class="fs-info">
+              <p class="fs-name"><%= f.name %></p>
+              <p class="fs-pos"><%= f.position %></p>
+              <div class="fs-room"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><%= f.officeRoom %></div>
+              <p class="fs-time">Last seen <%= f.bleLastDetected %></p>
+            </div>
+            <span class="fs-pill out"><span class="dot"></span>Out</span>
+          </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Detail Modal ── -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box">
+    <div class="detail-header">
+      <div class="detail-avatar" id="detailAvatar"></div>
+      <div>
+        <p class="detail-name" id="detailName"></p>
+        <p class="detail-pos" id="detailPos"></p>
+      </div>
+      <button class="modal-close-btn" style="margin-left:auto" onclick="closeModal('detailModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <label>Department</label>
+        <p id="detailDept"></p>
+      </div>
+      <div class="detail-item">
+        <label>BLE Status</label>
+        <p id="detailBle"></p>
+      </div>
+      <div class="detail-item full">
+        <label>Office / Room</label>
+        <p id="detailRoom"></p>
+      </div>
+      <div class="detail-item">
+        <label>Last Detected</label>
+        <p id="detailLastSeen"></p>
+      </div>
+      <div class="detail-item">
+        <label>Hours This Month</label>
+        <p id="detailHours"></p>
+      </div>
+      <div class="detail-item">
+        <label>Consultations (Month)</label>
+        <p id="detailConsult"></p>
+      </div>
+      <div class="detail-item">
+        <label>Avg. Duration</label>
+        <p id="detailAvg"></p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-danger" id="detailDeleteBtn">Delete Instructor</button>
+      <button class="btn-modal-cancel" onclick="closeModal('detailModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Instructor Modal ── -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Instructor</h3>
+      <button class="modal-close-btn" onclick="closeModal('addModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form-grid">
+        <div class="full">
+          <label class="modal-label">Full Name <span style="color:#dc2626">*</span></label>
+          <input type="text" class="modal-input" id="addName" placeholder="e.g. Dr. Juan Dela Cruz">
+        </div>
+        <div>
+          <label class="modal-label">Position <span style="color:#dc2626">*</span></label>
+          <select class="modal-select" id="addPosition">
+            <option value="">Select position</option>
+            <option>Professor</option>
+            <option>Associate Professor</option>
+            <option>Assistant Professor</option>
+            <option>Instructor</option>
+          </select>
+        </div>
+        <div>
+          <label class="modal-label">Employment Type</label>
+          <select class="modal-select" id="addEmployment">
+            <option value="Regular">Regular</option>
+            <option value="Part-time">Part-time</option>
+            <option value="Contractual">Contractual</option>
+          </select>
+        </div>
+        <div class="full">
+          <label class="modal-label">Office / Room <span style="color:#dc2626">*</span></label>
+          <input type="text" class="modal-input" id="addRoom" placeholder="e.g. CCS Building, Room 210">
+        </div>
+        <div class="full">
+          <label class="modal-label">Email Address</label>
+          <input type="email" class="modal-input" id="addEmail" placeholder="name@cspc.edu.ph">
+        </div>
+      </div>
+      <p id="addError" style="color:#dc2626;font-size:.78rem;margin-top:.75rem;display:none"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeModal('addModal')">Cancel</button>
+      <button class="btn-modal-primary" id="btnConfirmAdd">Add Instructor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete Confirm Modal ── -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <h3 class="modal-title">Remove Instructor</h3>
+      <button class="modal-close-btn" onclick="closeModal('deleteModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.9rem;color:var(--gray-700);margin:0">Are you sure you want to remove <strong id="deleteTargetName"></strong> from the faculty list? This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+      <button class="btn-modal-danger" id="btnConfirmDelete">Remove</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>
+
+<script>
+(function(){
+  'use strict';
+
+  // ── In-memory faculty store (seeded from server) ──
+  var facultyData = <%- JSON.stringify(faculty) %>;
+  var nextId = facultyData.length ? Math.max.apply(null, facultyData.map(function(f){ return f.id; })) + 1 : 1;
+  var pendingDeleteId = null;
+  var currentView = 'cards';
+
+  // ── Toast ──
+  function toast(type, title, msg){
+    var c = document.getElementById('toastContainer');
+    var t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerHTML = '<div class="toast-content"><p class="toast-title">' + title + '</p><p class="toast-message">' + msg + '</p></div>';
+    c.appendChild(t);
+    setTimeout(function(){ t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 300); }, 4000);
+  }
+
+  // ── Modal helpers ──
+  window.closeModal = function(id){
+    document.getElementById(id).classList.remove('open');
+  };
+  function openModal(id){
+    document.getElementById(id).classList.add('open');
+  }
+
+  // ── Initials ──
+  function initials(name){
+    return name.split(' ').map(function(n){ return n[0]; }).join('').slice(0, 2).toUpperCase();
+  }
+
+  // ── Render faculty lists ──
+  function render(){
+    var filterVal = document.getElementById('filterStatus').value;
+    var inRoom  = facultyData.filter(function(f){ return f.bleStatus === 'in-room'; });
+    var outRoom = facultyData.filter(function(f){ return f.bleStatus === 'out-of-room'; });
+
+    // Update counts
+    document.getElementById('inRoomCount').textContent  = inRoom.length;
+    document.getElementById('outRoomCount').textContent = outRoom.length;
+
+    // Card view
+    renderCardSection('inRoomGrid',  inRoom,  'in-room');
+    renderCardSection('outRoomGrid', outRoom, 'out-of-room');
+
+    // Section visibility
+    document.getElementById('inRoomSection').style.display  = (filterVal === 'all' || filterVal === 'in-room')    ? '' : 'none';
+    document.getElementById('outRoomSection').style.display = (filterVal === 'all' || filterVal === 'out-of-room') ? '' : 'none';
+
+    // Table view
+    renderTable(filterVal);
+  }
+
+  function renderCardSection(gridId, list, statusClass){
+    var grid = document.getElementById(gridId);
+    grid.innerHTML = '';
+    list.forEach(function(f){
+      var card = document.createElement('div');
+      card.className = 'fac-card ' + statusClass;
+      card.dataset.status = statusClass;
+      card.dataset.id = f.id;
+      var pillClass = statusClass === 'in-room' ? 'in' : 'out';
+      var pillLabel = statusClass === 'in-room' ? 'In Room' : 'Out';
+      var timeLabel = statusClass === 'in-room' ? 'Detected ' : 'Last seen ';
+      card.innerHTML =
+        '<div class="fac-avatar">' + initials(f.name) + '</div>' +
+        '<div class="fac-info">' +
+          '<p class="fac-name">' + esc(f.name) + '</p>' +
+          '<p class="fac-pos">' + esc(f.position) + '</p>' +
+          '<div class="fac-room"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' + esc(f.officeRoom) + '</div>' +
+          '<p class="fac-time">' + timeLabel + esc(f.bleLastDetected) + '</p>' +
+        '</div>' +
+        '<span class="status-pill ' + pillClass + '"><span class="dot"></span>' + pillLabel + '</span>';
+      card.addEventListener('click', function(){ openDetail(f); });
+      grid.appendChild(card);
+    });
+  }
+
+  function renderTable(filterVal){
+    var tbody = document.getElementById('facultyTbody');
+    tbody.innerHTML = '';
+    var list = filterVal === 'all' ? facultyData : facultyData.filter(function(f){ return f.bleStatus === filterVal; });
+    list.forEach(function(f){
+      var tr = document.createElement('tr');
+      tr.dataset.status = f.bleStatus;
+      tr.dataset.id = f.id;
+      var badgeClass = f.bleStatus === 'in-room' ? 'confirmed' : 'declined';
+      var badgeLabel = f.bleStatus === 'in-room' ? 'In Room' : 'Out of Room';
+      tr.innerHTML =
+        '<td><div style="display:flex;align-items:center;gap:.75rem"><div class="apt-avatar-xs">' + initials(f.name) + '</div><p style="font-weight:600;font-size:.875rem;color:var(--gray-900);margin:0">' + esc(f.name) + '</p></div></td>' +
+        '<td style="font-size:.8125rem;color:var(--gray-600)">' + esc(f.position) + '</td>' +
+        '<td style="font-size:.8125rem">' + esc(f.officeRoom) + '</td>' +
+        '<td><span class="table-badge ' + badgeClass + '">' + badgeLabel + '</span></td>' +
+        '<td style="font-size:.8125rem;color:var(--gray-500)">' + esc(f.bleLastDetected) + '</td>' +
+        '<td style="font-size:.875rem;font-weight:600;color:var(--gray-900)">' + f.consultationsThisMonth + '</td>' +
+        '<td><div style="display:flex;gap:.375rem">' +
+          '<button class="tbl-btn" data-view-id="' + f.id + '"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> View</button>' +
+          '<button class="tbl-btn danger" data-del-id="' + f.id + '"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> Delete</button>' +
+        '</div></td>';
+      tbody.appendChild(tr);
+    });
+
+    // Bind table buttons
+    tbody.querySelectorAll('[data-view-id]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var f = facultyData.find(function(x){ return x.id == btn.dataset.viewId; });
+        if(f) openDetail(f);
+      });
+    });
+    tbody.querySelectorAll('[data-del-id]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var f = facultyData.find(function(x){ return x.id == btn.dataset.delId; });
+        if(f) confirmDelete(f.id, f.name);
+      });
+    });
+  }
+
+  function esc(s){
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Detail modal ──
+  window.openDetail = function(f){
+    document.getElementById('detailAvatar').textContent = initials(f.name);
+    document.getElementById('detailName').textContent   = f.name;
+    document.getElementById('detailPos').textContent    = f.position;
+    document.getElementById('detailDept').textContent   = f.department;
+    document.getElementById('detailRoom').textContent   = f.officeRoom;
+    document.getElementById('detailLastSeen').textContent = f.bleLastDetected;
+    document.getElementById('detailHours').textContent  = f.hoursThisMonth + 'h';
+    document.getElementById('detailConsult').textContent = f.consultationsThisMonth;
+    document.getElementById('detailAvg').textContent    = f.avgDuration || '—';
+    var bleEl = document.getElementById('detailBle');
+    bleEl.innerHTML = f.bleStatus === 'in-room'
+      ? '<span class="table-badge confirmed">In Room</span>'
+      : '<span class="table-badge declined">Out of Room</span>';
+    document.getElementById('detailDeleteBtn').onclick = function(){
+      closeModal('detailModal');
+      confirmDelete(f.id, f.name);
+    };
+    openModal('detailModal');
+  };
+
+  // ── Delete ──
+  window.confirmDelete = function(id, name){
+    pendingDeleteId = id;
+    document.getElementById('deleteTargetName').textContent = name;
+    openModal('deleteModal');
+  };
+
+  document.getElementById('btnConfirmDelete').addEventListener('click', function(){
+    if(pendingDeleteId === null) return;
+    facultyData = facultyData.filter(function(f){ return f.id !== pendingDeleteId; });
+    pendingDeleteId = null;
+    closeModal('deleteModal');
+    render();
+    toast('success', 'Removed', 'Instructor removed from the faculty list.');
+  });
+
+  // ── Add instructor ──
+  document.getElementById('btnAddFaculty').addEventListener('click', function(){
+    document.getElementById('addName').value = '';
+    document.getElementById('addPosition').value = '';
+    document.getElementById('addEmployment').value = 'Regular';
+    document.getElementById('addRoom').value = '';
+    document.getElementById('addEmail').value = '';
+    document.getElementById('addError').style.display = 'none';
+    openModal('addModal');
+  });
+
+  document.getElementById('btnConfirmAdd').addEventListener('click', function(){
+    var name     = document.getElementById('addName').value.trim();
+    var position = document.getElementById('addPosition').value;
+    var room     = document.getElementById('addRoom').value.trim();
+    var errEl    = document.getElementById('addError');
+
+    if(!name || !position || !room){
+      errEl.textContent = 'Please fill in all required fields.';
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+
+    var newFaculty = {
+      id: nextId++,
+      name: name,
+      position: position,
+      department: 'College of Computer Studies',
+      officeRoom: room,
+      bleStatus: 'out-of-room',
+      bleLastDetected: 'Never',
+      hoursThisMonth: 0,
+      consultationsThisMonth: 0,
+      avgDuration: '—'
+    };
+    facultyData.push(newFaculty);
+    closeModal('addModal');
+    render();
+    toast('success', 'Added', name + ' has been added to the faculty list.');
+  });
+
+  // ── View toggle ──
+  document.getElementById('btnCards').addEventListener('click', function(){
+    currentView = 'cards';
+    document.getElementById('cardView').style.display = '';
+    document.getElementById('tableView').style.display = 'none';
+    document.getElementById('btnCards').classList.add('active');
+    document.getElementById('btnTable').classList.remove('active');
+  });
+  document.getElementById('btnTable').addEventListener('click', function(){
+    currentView = 'table';
+    document.getElementById('cardView').style.display = 'none';
+    document.getElementById('tableView').style.display = '';
+    document.getElementById('btnTable').classList.add('active');
+    document.getElementById('btnCards').classList.remove('active');
+    render();
+  });
+
+  // ── Status filter ──
+  document.getElementById('filterStatus').addEventListener('change', function(){ render(); });
+
+  // ── Full screen ──
+  function openPreview(){
+    document.getElementById('previewOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    updateClock();
+  }
+  function closePreview(){
+    document.getElementById('previewOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function updateClock(){
+    var el = document.getElementById('fsTimestamp');
+    if(el) el.textContent = new Date().toLocaleString('en-PH',{weekday:'short',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+  setInterval(function(){ if(document.getElementById('previewOverlay').classList.contains('open')) updateClock(); }, 1000);
+
+  document.getElementById('btnFullPreview').addEventListener('click', openPreview);
+  document.getElementById('previewClose').addEventListener('click', closePreview);
+  document.getElementById('previewOverlay').addEventListener('click', function(e){ if(e.target === this) closePreview(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closePreview(); closeModal('detailModal'); closeModal('addModal'); closeModal('deleteModal'); } });
+
+  // Close modals on overlay click
+  ['detailModal','addModal','deleteModal'].forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(e){ if(e.target === this) closeModal(id); });
+  });
+
+  // Initial render
+  render();
+}());
+</script>

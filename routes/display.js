@@ -15,7 +15,7 @@ const faculty = [
     { name: 'Prof. Maricel Castro', bleStatus: 'out-of-room' }
 ];
 
-router.get('/', (req, res) => {
+router.get('/display', (req, res) => {
     res.render('pages/public-display', { faculty });
 });
 

@@ -1,11 +1,5 @@
 <%- include('../../partials/header') %>
 <link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
-<style>
-    html, body { overflow: hidden !important; height: 100vh !important; }
-    body { display: flex; flex-direction: column; }
-    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-</style>
-
 <div class="instructor-layout">
     <%- include('../../partials/dean-sidebar', { activePage: 'dashboard' }) %>
 
@@ -107,7 +101,7 @@
                 <div class="content-card">
                     <div class="card-header">
                         <h3 class="card-title">Recent Activity</h3>
-                        <a href="/dean/monitoring" class="card-link">View All →</a>
+                        <a href="/dean/presence" class="card-link">View All →</a>
                     </div>
                     <div class="card-body">
                         <div class="presence-list-dashboard">
@@ -134,7 +128,7 @@
                 <div class="content-card">
                     <div class="card-header">
                         <h3 class="card-title">Upcoming Appointments</h3>
-                        <a href="/dean/appointments" class="card-link">View All →</a>
+                        <a href="/dean/reports" class="card-link">View Reports →</a>
                     </div>
                     <div class="card-body">
                         <div class="appointments-list-dashboard">

@@ -99,6 +99,11 @@ a {
     transition: color var(--transition-base);
 }
 
+/* Eliminate 300ms tap delay on mobile */
+a, button, input, select, textarea, label, [role="button"] {
+    touch-action: manipulation;
+}
+
 img {
     max-width: 100%;
     height: auto;
@@ -145,6 +150,21 @@ img {
 
     main {
         overflow: visible;
+        height: auto;
+        min-height: 0;
+    }
+
+    .instructor-layout,
+    .instructor-main {
+        overflow: visible;
+        height: auto;
+        min-height: 0;
+    }
+
+    .book-scroll,
+    .prof-scroll {
+        overflow: visible;
+        height: auto;
     }
 
     .container {
@@ -155,5 +175,17 @@ img {
 @media (max-width: 480px) {
     .container {
         padding: 0 var(--spacing-sm);
+    }
+
+    .main-container {
+        padding: 1rem 0.75rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .apt-card {
+        flex-wrap: wrap;
     }
 }

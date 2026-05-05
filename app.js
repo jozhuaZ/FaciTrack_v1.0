@@ -15,10 +15,18 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware: Parse URL-encoded bodies (form data)
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Middleware: Parse JSON bodies
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+
+// Security: Basic headers
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+});
 
 // Middleware: Global logging
 app.use((req, res, next) => {
@@ -30,18 +38,24 @@ app.use((req, res, next) => {
 app.use('/', require('./routes/index'));
 app.use('/student', require('./routes/student'));
 app.use('/instructor', require('./routes/instructor'));
-app.use('/display', require('./routes/display'));
 app.use('/dean', require('./routes/dean'));
 app.use('/admin', require('./routes/admin'));
+app.use('/superadmin', require('./routes/superadmin'));
+app.use('/', require('./routes/display'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error occurred:');
+    console.error(`[Error Log]: ${err.message}`);
     console.error('URL:', req.url);
     console.error('Method:', req.method);
-    console.error('Error message:', err.message);
     console.error('Stack:', err.stack);
-    res.status(500).send('Something went wrong!');
+
+    const statusCode = err.status || 500;
+
+    res.status(statusCode).json({
+        status: 'error',
+        message: err.message
+    });
 });
 
 // Start server

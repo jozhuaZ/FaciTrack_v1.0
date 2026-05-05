@@ -1,0 +1,255 @@
+<%- include('../../partials/header') %>
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+<style>
+    .avail-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:1rem; }
+    .avail-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); overflow:hidden; display:flex; flex-direction:column; transition:transform .2s,box-shadow .2s; }
+    .avail-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); }
+    .avail-photo { width:100%; aspect-ratio:1/1; background:linear-gradient(135deg,#e8eef5,#d0dce8); display:flex; align-items:center; justify-content:center; position:relative; flex-shrink:0; }
+    .avail-photo svg { width:42%; height:42%; color:#a0b4c8; }
+    .avail-status-dot { position:absolute; bottom:8px; right:8px; width:16px; height:16px; border-radius:50%; border:2.5px solid white; box-shadow:0 1px 4px rgba(0,0,0,.2); }
+    .avail-status-dot.in  { background:#16a34a; }
+    .avail-status-dot.out { background:#9ca3af; }
+    .avail-info { padding:.75rem .875rem; display:flex; flex-direction:column; gap:.375rem; }
+    .avail-name { font-weight:700; font-size:.875rem; color:var(--gray-900); margin:0; line-height:1.3; }
+    .avail-position { font-size:.6875rem; color:var(--gray-500); margin:0; }
+    .avail-badge { display:inline-flex; align-items:center; gap:.3rem; padding:3px 10px; border-radius:var(--radius-full); font-size:.6875rem; font-weight:700; letter-spacing:.4px; text-transform:uppercase; align-self:flex-start; }
+    .avail-badge.in  { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+    .avail-badge.out { background:var(--gray-100); color:var(--gray-400); border:1px solid var(--gray-200); }
+    .live-pill { display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; border-radius:var(--radius-full); padding:5px 14px; font-size:.78rem; font-weight:700; letter-spacing:.5px; }
+    .live-dot { width:7px; height:7px; background:#16a34a; border-radius:50%; animation:blink 1.5s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── OTP gate — same pattern as My Appointments ── */
+    .otp-gate { position:fixed; inset:0; background:rgba(10,30,60,.55); z-index:200; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1rem; }
+    .otp-gate-card { position:relative; background:#fff; border-radius:var(--radius-xl); padding:2.25rem 2rem; max-width:400px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.2); text-align:center; }
+    .overlay-close-btn { position:absolute; top:10px; right:10px; width:32px; height:32px; border:1px solid var(--gray-200); border-radius:8px; background:#fff; color:var(--gray-500); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; }
+    .overlay-close-btn:hover { border-color:var(--gray-300); background:var(--gray-50); color:var(--gray-700); }
+    .page-content-blur { filter:blur(5px); pointer-events:none; user-select:none; transition:filter .3s; }
+    .otp-gate-icon { width:64px; height:64px; background:rgba(10,61,98,.08); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; }
+    .otp-gate-title { font-size:1.125rem; font-weight:700; color:var(--primary-blue); margin:0 0 .375rem; }
+    .otp-gate-desc { font-size:.875rem; color:var(--gray-600); margin:0 0 1.25rem; line-height:1.6; }
+    .otp-gate-error { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; border-radius:var(--radius-md); padding:.625rem .875rem; font-size:.8125rem; margin-bottom:.75rem; text-align:left; }
+    .otp-gate-email { display:flex; gap:.5rem; margin-bottom:1rem; }
+    .otp-gate-email input { flex:1; padding:.6rem .875rem; border:1.5px solid var(--gray-300); border-radius:var(--radius-md); font-size:.875rem; font-family:var(--font-body); outline:none; }
+    .otp-gate-email input:focus { border-color:var(--primary-blue); }
+    .otp-gate-email button { padding:.6rem 1rem; background:var(--primary-blue); color:#fff; border:none; border-radius:var(--radius-md); font-size:.875rem; font-weight:600; cursor:pointer; font-family:var(--font-body); white-space:nowrap; }
+    .otp-gate-inputs { display:flex; gap:.375rem; justify-content:center; margin-bottom:1rem; }
+    .otp-gate-box { width:42px; height:50px; border:1.5px solid var(--gray-300); border-radius:var(--radius-md); font-size:1.25rem; font-weight:700; text-align:center; color:var(--gray-900); font-family:var(--font-body); outline:none; caret-color:transparent; transition:border-color .2s; }
+    .otp-gate-box:focus { border-color:var(--primary-blue); box-shadow:0 0 0 3px rgba(10,61,98,.08); }
+    .otp-gate-box.filled { border-color:var(--secondary-teal); background:rgba(10,61,98,.03); }
+    .btn-otp-verify { width:100%; padding:.75rem; background:var(--primary-blue); color:#fff; border:none; border-radius:var(--radius-md); font-size:.9375rem; font-weight:600; cursor:pointer; font-family:var(--font-body); transition:background .2s; }
+    .btn-otp-verify:disabled { background:var(--gray-300); cursor:not-allowed; }
+    .btn-otp-verify:not(:disabled):hover { background:var(--primary-dark); }
+    .otp-gate-hint { font-size:.75rem; color:var(--gray-500); margin-top:.75rem; }
+    .btn-gate-return { display:block; width:100%; padding:.65rem; background:#fff; color:var(--gray-700); border:1.5px solid var(--gray-300); border-radius:var(--radius-md); font-size:.875rem; font-weight:600; cursor:pointer; font-family:var(--font-body); text-decoration:none; text-align:center; margin-top:.875rem; transition:all .2s; box-sizing:border-box; }
+    .btn-gate-return:hover { border-color:var(--gray-400); background:var(--gray-50); }
+
+    @media (max-width:640px) {
+        .availability-info-banner { padding:.75rem .875rem !important; }
+        .otp-gate-card { padding:1.5rem 1.125rem; }
+        .otp-gate-email { flex-direction:column; }
+        .otp-gate-email button { width:100%; }
+    }
+    @media (max-width:480px) {
+        .avail-grid { grid-template-columns:repeat(2,1fr); }
+        .otp-gate-box { width:36px; height:44px; font-size:1.0625rem; }
+    }
+</style>
+
+<div class="instructor-layout">
+    <%- include('../../partials/student-sidebar', { activePage: 'availability', appointmentCount: 0 }) %>
+
+    <main class="instructor-main">
+        <div class="main-container">
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Faculty Availability</h1>
+                </div>
+                <div class="header-actions">
+                    <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+                </div>
+            </div>
+
+            <!-- All content blurred until OTP verified -->
+            <div id="pageContent" class="page-content-blur">
+
+                <!-- Info Banner -->
+                <div class="availability-info-banner" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-md);padding:.875rem 1.25rem;margin-bottom:1rem;display:flex;align-items:flex-start;gap:.75rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <div>
+                        <p style="font-size:.875rem;font-weight:600;color:#1d4ed8;margin:0 0 .125rem;">Privacy Notice</p>
+                        <p style="font-size:.8125rem;color:#1e40af;margin:0;">This display shows only general "In" or "Out" status to respect faculty privacy.</p>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="content-card" style="margin-bottom:1rem;">
+                    <div class="card-body" style="padding:.875rem 1.25rem;">
+                        <div style="position:relative;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="searchInput" placeholder="Search instructor by name..." style="width:100%;padding:.6rem 1rem .6rem 2.4rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-md);font-size:.875rem;font-family:var(--font-body);background:#fff;color:var(--gray-800);outline:none;" oninput="filterFaculty()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Faculty Grid -->
+                <div class="content-card" style="flex:1;min-height:0;">
+                    <div class="card-header">
+                        <h3 class="card-title">CCS Faculty Status</h3>
+                    </div>
+                    <div class="card-body" style="padding:1.25rem;overflow-y:auto;">
+                        <div class="avail-grid" id="availGrid">
+                            <% facultyList.forEach(f => { %>
+                            <% const isIn = f.status === 'available' || f.status === 'busy'; %>
+                            <div class="avail-card" data-name="<%= f.name.toLowerCase() %>">
+                                <div class="avail-photo">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <span class="avail-status-dot <%= isIn ? 'in' : 'out' %>"></span>
+                                </div>
+                                <div class="avail-info">
+                                    <p class="avail-name"><%= f.name %></p>
+                                    <p class="avail-position"><%= f.position %></p>
+                                    <span class="avail-badge <%= isIn ? 'in' : 'out' %>"><%= isIn ? 'IN' : 'OUT' %></span>
+                                </div>
+                            </div>
+                            <% }); %>
+                        </div>
+                        <p id="noResults" style="display:none;text-align:center;padding:2rem;color:var(--gray-400);font-size:.875rem;">No instructor found.</p>
+                    </div>
+                </div>
+
+            </div><!-- end #pageContent -->
+
+        </div>
+    </main>
+</div>
+
+<!-- OTP Gate Overlay — fixed full-screen, same as My Appointments -->
+<div class="otp-gate" id="otpGate">
+    <div class="otp-gate-card">
+        <button type="button" class="overlay-close-btn" id="otpGateCloseBtn" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="otp-gate-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h3 class="otp-gate-title">Verify to View Availability</h3>
+        <p class="otp-gate-desc">Enter your CSPC email to receive a one-time code and access the faculty availability board.</p>
+
+        <div id="gateErrorMsg" class="otp-gate-error" style="display:none;"></div>
+
+        <!-- Step 1: Email -->
+        <div id="gateStep1">
+            <div class="otp-gate-email">
+                <input type="email" id="gateEmail" placeholder="student@my.cspc.edu.ph">
+                <button id="gateSendOtp">Send OTP</button>
+            </div>
+            <p class="otp-gate-hint">Use your official CSPC student email (@my.cspc.edu.ph)</p>
+        </div>
+
+        <!-- Step 2: OTP entry -->
+        <div id="gateStep2" style="display:none;">
+            <p style="font-size:.8125rem;color:var(--gray-600);margin-bottom:.75rem;">Code sent to <strong id="gateEmailDisplay"></strong></p>
+            <div class="otp-gate-inputs">
+                <input type="text" class="otp-gate-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="otp-gate-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="otp-gate-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="otp-gate-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="otp-gate-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="otp-gate-box" maxlength="1" inputmode="numeric">
+            </div>
+            <button class="btn-otp-verify" id="gateVerifyBtn" disabled>Verify &amp; View</button>
+            <p class="otp-gate-hint">For testing, use OTP: <strong>123456</strong></p>
+        </div>
+
+        <a href="/student/dashboard" class="btn-gate-return">&#8592; Return to Faculty Directory</a>
+    </div>
+</div>
+
+<%- include('../../partials/footer') %>
+<%- include('../../partials/script') %>
+<script>
+const DEMO_OTP = '123456';
+const gateEl      = document.getElementById('otpGate');
+const pageContent = document.getElementById('pageContent');
+const step1       = document.getElementById('gateStep1');
+const step2       = document.getElementById('gateStep2');
+const gateError   = document.getElementById('gateErrorMsg');
+const gateBoxes   = document.querySelectorAll('.otp-gate-box');
+const gateVerifyBtn = document.getElementById('gateVerifyBtn');
+document.getElementById('otpGateCloseBtn').addEventListener('click', () => {
+    window.location.href = '/student/dashboard';
+});
+
+function showGateError(msg) { gateError.textContent = msg; gateError.style.display = 'block'; }
+function hideGateError()    { gateError.style.display = 'none'; }
+
+document.getElementById('gateSendOtp').addEventListener('click', () => {
+    const email = document.getElementById('gateEmail').value.trim().toLowerCase();
+    if (!email.endsWith('@my.cspc.edu.ph')) {
+        showGateError('Please use your official CSPC student email (@my.cspc.edu.ph).');
+        return;
+    }
+    hideGateError();
+    document.getElementById('gateEmailDisplay').textContent = email;
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+    gateBoxes[0].focus();
+});
+
+gateBoxes.forEach((box, i) => {
+    box.addEventListener('input', e => {
+        const val = e.target.value.replace(/\D/g, '');
+        box.value = val ? val[0] : '';
+        box.classList.toggle('filled', !!box.value);
+        if (box.value && i < gateBoxes.length - 1) gateBoxes[i + 1].focus();
+        checkComplete();
+    });
+    box.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !box.value && i > 0) {
+            gateBoxes[i - 1].focus();
+            gateBoxes[i - 1].value = '';
+            gateBoxes[i - 1].classList.remove('filled');
+            checkComplete();
+        }
+    });
+    box.addEventListener('paste', e => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+        pasted.split('').forEach((ch, idx) => { if (gateBoxes[idx]) { gateBoxes[idx].value = ch; gateBoxes[idx].classList.add('filled'); } });
+        if (pasted.length > 0) gateBoxes[Math.min(pasted.length, 5)].focus();
+        checkComplete();
+    });
+});
+
+function checkComplete() {
+    const code = Array.from(gateBoxes).map(b => b.value).join('');
+    gateVerifyBtn.disabled = code.length < 6;
+}
+
+gateVerifyBtn.addEventListener('click', () => {
+    const code = Array.from(gateBoxes).map(b => b.value).join('');
+    if (code !== DEMO_OTP) {
+        showGateError('Incorrect OTP. For testing, use: 123456');
+        return;
+    }
+    hideGateError();
+    gateEl.style.display = 'none';
+    pageContent.classList.remove('page-content-blur');
+    pageContent.style.pointerEvents = '';
+    pageContent.style.userSelect = '';
+});
+
+function filterFaculty() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    const cards = document.querySelectorAll('#availGrid .avail-card');
+    let visible = 0;
+    cards.forEach(card => {
+        const match = card.dataset.name.includes(q);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+    document.getElementById('noResults').style.display = visible === 0 ? 'block' : 'none';
+}
+</script>

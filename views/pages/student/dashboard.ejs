@@ -1,293 +1,165 @@
 <%- include('../../partials/header') %>
-
+<link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
 <link rel="stylesheet" href="/css/student/dashboard.css?v=<%= Date.now() %>">
 <style>
-    /* Allow full-page scroll for content-heavy directory page */
-    html, body { overflow: auto !important; height: auto !important; }
+    /* Photo placeholder in faculty cards */
+    .card-photo-placeholder {
+        width: 52px;
+        height: 52px;
+        border-radius: var(--radius-full);
+        background: linear-gradient(135deg, #e8eef5 0%, #d0dce8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(10,61,98,0.12);
+    }
+    .card-photo-placeholder svg {
+        width: 26px;
+        height: 26px;
+        color: #a0b4c8;
+    }
+
+    @media (max-width: 640px) {
+        #deptFilter,
+        #statusFilter,
+        #clearFiltersBtn {
+            width: 100%;
+        }
+    }
 </style>
 
-<main class="dir-main">
-    <div class="dir-container">
+<div class="instructor-layout">
+    <%- include('../../partials/student-sidebar', { activePage: 'dashboard', appointmentCount: 0 }) %>
 
-        <!-- Top Bar -->
-        <div class="dir-topbar">
-            <div>
-                <h1 class="dir-title">Faculty Directory</h1>
-                <p class="dir-subtitle">Find a faculty member and book a consultation appointment</p>
-            </div>
-            <a href="/student/verify" class="btn-logout">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                Logout
-            </a>
-        </div>
+    <main class="instructor-main">
+        <div class="main-container">
 
-        <!-- Stats Strip (clickable filters) -->
-        <div class="stats-strip">
-            <button class="stat-pill available" data-filter-status="available">
-                <span class="stat-dot"></span>
-                <span><%= facultyList.filter(f => f.status === 'available').length %> Available</span>
-            </button>
-            <button class="stat-pill busy" data-filter-status="busy">
-                <span class="stat-dot"></span>
-                <span><%= facultyList.filter(f => f.status === 'busy').length %> In Consultation</span>
-            </button>
-            <button class="stat-pill away" data-filter-status="away">
-                <span class="stat-dot"></span>
-                <span><%= facultyList.filter(f => f.status === 'away').length %> Away</span>
-            </button>
-            <button class="stat-pill total" data-filter-status="all">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                <span><%= facultyList.length %> Total Faculty</span>
-            </button>
-        </div>
-
-        <!-- Search and Filters -->
-        <div class="filter-bar">
-            <div class="search-box">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input type="text" id="searchInput" placeholder="Search by faculty name..." class="search-input">
-            </div>
-            <select class="filter-select" id="collegeFilter">
-                <option value="all">All Colleges</option>
-                <option value="College of Computer Studies">College of Computer Studies</option>
-                <option value="College of Engineering and Architecture">College of Engineering and Architecture</option>
-                <option value="College of Arts and Sciences">College of Arts and Sciences</option>
-                <option value="College of Health Sciences">College of Health Sciences</option>
-                <option value="College of Tourism, Hospitality and Business Management">College of Tourism, Hospitality and Business Management</option>
-                <option value="College of Technological and Development Education">College of Technological and Development Education</option>
-            </select>
-            <select class="filter-select" id="statusFilter">
-                <option value="all">All Status</option>
-                <option value="available">Available</option>
-                <option value="busy">In Consultation</option>
-                <option value="away">Away</option>
-            </select>
-        </div>
-
-        <!-- Faculty Card Grid -->
-        <div class="faculty-grid" id="facultyGrid">
-
-            <!-- Empty state — inside grid so grid-column: 1/-1 works -->
-            <div class="empty-state" id="emptyState">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <p>No faculty found for the selected filters.</p>
-                <button class="btn-clear-filters" id="clearFilters">Clear Filters</button>
-            </div>
-
-            <% facultyList.forEach((faculty, index) => { %>
-            <a href="/student/dashboard/<%= faculty.id %>" class="faculty-card" data-college="<%= faculty.department %>" data-status="<%= faculty.status %>" data-name="<%= faculty.name.toLowerCase() %>" data-index="<%= index %>">
-                <div class="card-top">
-                    <div class="card-avatar"><%= faculty.name.split(' ').map(n => n[0]).join('') %></div>
-                    <span class="status-badge <%= faculty.status %>">
-                        <span class="status-dot"></span>
-                        <%= faculty.status === 'busy' ? 'In Consultation' : faculty.status.charAt(0).toUpperCase() + faculty.status.slice(1) %>
-                    </span>
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Faculty Directory</h1>
+                    <p class="page-subtitle">Browse CCS faculty members and book a consultation appointment</p>
                 </div>
-                <div class="card-body">
-                    <h3 class="card-name"><%= faculty.name %></h3>
-                    <p class="card-position"><%= faculty.position %></p>
-                    <p class="card-college">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                        <%= faculty.department %>
-                    </p>
-                    <p class="card-spec">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
-                        <%= faculty.specialization %>
-                    </p>
-                </div>
-                <div class="card-footer">
-                    <div class="next-available">
-                        <span class="next-label">Next available:</span>
-                        <span class="next-time"><%= faculty.nextAvailable %></span>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="content-card" style="margin-bottom:1rem;">
+                <div class="card-body" style="padding:0.875rem 1.25rem;">
+                    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+                        <div style="position:relative;flex:1;min-width:160px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="searchInput" placeholder="Search name or specialization..." style="width:100%;padding:0.6rem 1rem 0.6rem 2.4rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-md);font-size:0.875rem;font-family:var(--font-body);background:#fff;color:var(--gray-800);outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--secondary-teal)'" onblur="this.style.borderColor='var(--gray-200)'">
+                        </div>
+                        <select id="deptFilter" style="padding:0.6rem 0.875rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-md);font-size:0.875rem;font-family:var(--font-body);background:#fff;color:var(--gray-800);outline:none;cursor:pointer;flex-shrink:0;">
+                            <option value="all">All Departments</option>
+                            <% departments.forEach(function(d) { %>
+                                <option value="<%= d.value %>" <%= activeDept === d.value ? 'selected' : '' %>><%= d.label %></option>
+                            <% }); %>
+                        </select>
+                        <select id="statusFilter" style="padding:0.6rem 0.875rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-md);font-size:0.875rem;font-family:var(--font-body);background:#fff;color:var(--gray-800);outline:none;cursor:pointer;flex-shrink:0;">
+                            <option value="all">All Status</option>
+                            <option value="available">Available</option>
+                            <option value="busy">In Consultation</option>
+                            <option value="away">Away</option>
+                        </select>
+                        <button id="clearFiltersBtn" style="padding:0.6rem 1rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-md);font-size:0.875rem;font-family:var(--font-body);background:#fff;color:var(--gray-600);cursor:pointer;transition:all 0.2s;flex-shrink:0;">Clear</button>
                     </div>
-                    <span class="btn-view-inline">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </span>
                 </div>
-            </a>
-            <% }); %>
-        </div>
+            </div>
 
-        <!-- Load More Button (only shows if there are more than 12 faculty) -->
-        <% if (facultyList.length > 12) { %>
-        <div class="load-more-container" id="loadMoreContainer">
-            <button class="btn-load-more" id="loadMoreBtn">
-                <span>Load More Faculty</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </button>
-            <p class="load-more-info" id="loadMoreInfo">Showing <span id="shownCount">12</span> of <span id="totalCount"><%= facultyList.length %></span> faculty</p>
-        </div>
-        <% } %>
+            <!-- Faculty Card Grid -->
+            <div class="content-card" style="flex:1;min-height:0;">
+                <div class="card-body" style="padding:1.25rem;overflow-y:auto;height:100%;">
+                    <div class="faculty-grid" id="facultyGrid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));">
 
-    </div>
-</main>
+                        <div class="empty-state" id="emptyState" style="display:none;grid-column:1/-1;text-align:center;padding:3rem;color:var(--gray-400);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 1rem;display:block;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <p style="font-size:0.9rem;">No faculty found for the selected filters.</p>
+                        </div>
+
+                        <% facultyList.forEach((faculty, index) => { %>
+                        <a href="/student/faculty/<%= faculty.id %>" class="faculty-card" data-status="<%= faculty.status %>" data-name="<%= faculty.name.toLowerCase() %>" data-spec="<%= faculty.specialization.toLowerCase() %>" data-dept="<%= faculty.department %>">
+                            <div class="card-top">
+                                <!-- Photo placeholder — replace with <img> when actual photo is available -->
+                                <div class="card-photo-placeholder">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                </div>
+                                <span class="status-badge <%= faculty.status %>">
+                                    <span class="status-dot"></span>
+                                    <%= faculty.status === 'busy' ? 'In Consultation' : faculty.status.charAt(0).toUpperCase() + faculty.status.slice(1) %>
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <h3 class="card-name"><%= faculty.name %></h3>
+                                <p class="card-position"><%= faculty.position %></p>
+                                <p class="card-college">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    <%= faculty.department %>
+                                </p>
+                                <p class="card-spec">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    <%= faculty.specialization %>
+                                </p>
+                            </div>
+                            <div class="card-footer">
+                                <div class="next-available">
+                                    <span class="next-label">Next available:</span>
+                                    <span class="next-time"><%= faculty.nextAvailable %></span>
+                                </div>
+                                <span class="btn-view-inline">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                </span>
+                            </div>
+                        </a>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
 
 <%- include('../../partials/footer') %>
 <%- include('../../partials/script') %>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('searchInput');
-    const collegeFilter = document.getElementById('collegeFilter');
     const statusFilter = document.getElementById('statusFilter');
+    const deptFilter = document.getElementById('deptFilter');
     const cards = document.querySelectorAll('.faculty-card');
     const emptyState = document.getElementById('emptyState');
-    const clearFiltersBtn = document.getElementById('clearFilters');
-    const statPills = document.querySelectorAll('.stat-pill[data-filter-status]');
-    const loadMoreBtn = document.getElementById('loadMoreBtn');
-    const loadMoreContainer = document.getElementById('loadMoreContainer');
-    const shownCountEl = document.getElementById('shownCount');
-    const totalCountEl = document.getElementById('totalCount');
-
-    const ITEMS_PER_PAGE = 12;
-    let currentPage = 1;
-
-    // Restore saved filter values from localStorage
-    const savedCollege = localStorage.getItem('facultyCollegeFilter');
-    const savedStatus = localStorage.getItem('facultyStatusFilter');
-    const savedSearch = localStorage.getItem('facultySearchQuery');
-    
-    if (savedCollege) collegeFilter.value = savedCollege;
-    if (savedStatus) statusFilter.value = savedStatus;
-    if (savedSearch) searchInput.value = savedSearch;
+    const clearBtn = document.getElementById('clearFiltersBtn');
 
     function applyFilters() {
-        const college = collegeFilter.value;
         const status = statusFilter.value;
-        const searchQuery = searchInput.value.toLowerCase().trim();
+        const dept = deptFilter.value;
+        const query = searchInput.value.toLowerCase().trim();
         let visible = 0;
-        let matchingCards = [];
 
-        // Save filter values to localStorage
-        localStorage.setItem('facultyCollegeFilter', college);
-        localStorage.setItem('facultyStatusFilter', status);
-        localStorage.setItem('facultySearchQuery', searchInput.value);
-
-        // First pass: determine which cards match filters
         cards.forEach(card => {
-            const matchCollege = college === 'all' || card.dataset.college === college;
             const matchStatus = status === 'all' || card.dataset.status === status;
-            const matchSearch = searchQuery === '' || card.dataset.name.includes(searchQuery);
-
-            if (matchCollege && matchStatus && matchSearch) {
-                matchingCards.push(card);
-            } else {
-                card.classList.add('hidden');
-                card.classList.remove('paginated');
-            }
+            const matchDept   = dept === 'all'   || card.dataset.dept === dept;
+            const matchSearch = !query || card.dataset.name.includes(query) || card.dataset.spec.includes(query);
+            const show = matchStatus && matchDept && matchSearch;
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
         });
 
-        // Apply pagination to matching cards
-        matchingCards.forEach((card, index) => {
-            if (index < currentPage * ITEMS_PER_PAGE) {
-                card.classList.remove('hidden');
-                card.classList.remove('paginated');
-                visible++;
-            } else {
-                card.classList.add('hidden');
-                card.classList.add('paginated');
-            }
-        });
-
-        // Update UI
-        emptyState.classList.toggle('visible', matchingCards.length === 0);
-        
-        // Update load more button
-        if (loadMoreContainer) {
-            const hasMore = matchingCards.length > currentPage * ITEMS_PER_PAGE;
-            loadMoreContainer.style.display = matchingCards.length > ITEMS_PER_PAGE ? 'flex' : 'none';
-            loadMoreBtn.style.display = hasMore ? 'flex' : 'none';
-            
-            if (shownCountEl && totalCountEl) {
-                shownCountEl.textContent = Math.min(visible, matchingCards.length);
-                totalCountEl.textContent = matchingCards.length;
-            }
-        }
+        emptyState.style.display = visible === 0 ? 'block' : 'none';
     }
 
-    function loadMore() {
-        currentPage++;
-        applyFilters();
-        
-        // Smooth scroll to first newly loaded item
-        const firstNewCard = document.querySelector('.faculty-card:not(.hidden):nth-child(' + ((currentPage - 1) * ITEMS_PER_PAGE + 1) + ')');
-        if (firstNewCard) {
-            setTimeout(() => {
-                firstNewCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 100);
-        }
-    }
+    searchInput.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+    deptFilter.addEventListener('change', applyFilters);
 
-    function clearFilters() {
-        collegeFilter.value = 'all';
-        statusFilter.value = 'all';
+    clearBtn.addEventListener('click', function () {
         searchInput.value = '';
-        currentPage = 1;
-        localStorage.removeItem('facultyCollegeFilter');
-        localStorage.removeItem('facultyStatusFilter');
-        localStorage.removeItem('facultySearchQuery');
+        statusFilter.value = 'all';
+        deptFilter.value = 'all';
         applyFilters();
-    }
+    });
 
-    // Event listeners
-    searchInput.addEventListener('input', () => {
-        currentPage = 1;
-        applyFilters();
-    });
-    
-    collegeFilter.addEventListener('change', () => {
-        currentPage = 1;
-        applyFilters();
-    });
-    
-    statusFilter.addEventListener('change', () => {
-        currentPage = 1;
-        applyFilters();
-    });
-    
-    clearFiltersBtn.addEventListener('click', clearFilters);
-    
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', loadMore);
-    }
-
-    // Clickable stat pills for quick filtering
-    statPills.forEach(pill => {
-        pill.addEventListener('click', function() {
-            const filterStatus = this.dataset.filterStatus;
-            statusFilter.value = filterStatus;
-            currentPage = 1;
-            applyFilters();
-        });
-    });
-    
-    // Apply filters on page load
     applyFilters();
 });
 </script>

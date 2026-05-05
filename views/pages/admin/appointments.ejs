@@ -1,11 +1,5 @@
 <%- include('../../partials/header') %>
 <link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
-<style>
-    html, body { overflow: hidden !important; height: 100vh !important; }
-    body { display: flex; flex-direction: column; }
-    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-</style>
-
 <div class="instructor-layout">
     <%- include('../../partials/admin-sidebar', { activePage: 'appointments' }) %>
 
@@ -15,7 +9,7 @@
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Appointments</h1>
-                    <p class="page-subtitle">System-wide oversight of all consultation appointments</p>
+                    <p class="page-subtitle">Consultation appointments — College of Computer Studies</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn-header-action" id="btnExportAppointments">
@@ -70,7 +64,7 @@
 
             <div class="content-card">
                 <div class="card-header">
-                    <h3 class="card-title">All Appointments</h3>
+                    <h3 class="card-title">All Appointments — CCS</h3>
                     <div style="display:flex;gap:0.5rem;align-items:center;">
                         <select class="modal-select" id="instructorFilter" style="padding:0.375rem 0.75rem;font-size:0.8125rem;">
                             <option value="all">All Faculty</option>
@@ -92,6 +86,7 @@
                             <tr>
                                 <th>Student</th>
                                 <th>Faculty</th>
+                                <th>Department</th>
                                 <th>Date & Time</th>
                                 <th>Topic</th>
                                 <th>Duration</th>
@@ -100,7 +95,7 @@
                         </thead>
                         <tbody>
                             <% allAppointments.forEach(apt => { %>
-                            <tr data-status="<%= apt.status %>" data-instructor="<%= apt.instructorName %>">
+                            <tr data-status="<%= apt.status %>" data-instructor="<%= apt.instructorName %>" data-dept="<%= apt.department %>">
                                 <td>
                                     <div style="display:flex;align-items:center;gap:0.75rem;">
                                         <div class="apt-avatar-xs"><%= apt.studentName.split(' ').map(n => n[0]).join('') %></div>
@@ -111,8 +106,9 @@
                                     </div>
                                 </td>
                                 <td><%= apt.instructorName %></td>
+                                <td style="font-size:0.8125rem;color:var(--gray-600);"><%= apt.department %></td>
                                 <td><%= apt.date %> • <%= apt.time %></td>
-                                <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="<%= apt.topic %>"><%= apt.topic %></td>
+                                <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="<%= apt.topic %>"><%= apt.topic %></td>
                                 <td><%= apt.duration %></td>
                                 <td><span class="table-badge <%= apt.status %>"><%= apt.status.charAt(0).toUpperCase() + apt.status.slice(1) %></span></td>
                             </tr>
@@ -121,9 +117,8 @@
                     </table>
                 </div>
                 <div class="pagination-bar">
-                    <button class="btn-page" id="btnPrev">&#8592; Prev</button>
                     <span class="page-info" id="pageInfo"></span>
-                    <button class="btn-page" id="btnNext">Next &#8594;</button>
+                    <div class="pagination-controls" id="aptPgCtrl"></div>
                 </div>
             </div>
 
@@ -135,7 +130,7 @@
 <%- include('../../partials/footer') %>
 <%- include('../../partials/script') %>
 <script>
-const ROWS_PER_PAGE = 7;
+const ROWS_PER_PAGE = 10;
 let currentPage = 1;
 
 function getVisibleRows() {
@@ -154,9 +149,38 @@ function renderPage() {
     if (currentPage > totalPages) currentPage = totalPages;
     document.querySelectorAll('#appointmentsTable tbody tr').forEach(r => r.style.display = 'none');
     rows.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE).forEach(r => r.style.display = '');
-    document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
-    document.getElementById('btnPrev').disabled = currentPage === 1;
-    document.getElementById('btnNext').disabled = currentPage === totalPages;
+    const total = rows.length;
+    const from = total ? ((currentPage - 1) * ROWS_PER_PAGE) + 1 : 0;
+    const to = Math.min(currentPage * ROWS_PER_PAGE, total);
+    document.getElementById('pageInfo').textContent = total ? `Showing ${from}–${to} of ${total}` : 'No results found';
+    const ctrl = document.getElementById('aptPgCtrl');
+    ctrl.innerHTML = '';
+    if (totalPages > 1) {
+        const prev = document.createElement('button');
+        prev.className = 'pg-btn pg-arrow';
+        prev.innerHTML = '&#8592;';
+        prev.disabled = currentPage === 1;
+        prev.addEventListener('click', () => { currentPage--; renderPage(); });
+        ctrl.appendChild(prev);
+
+        let s = Math.max(1, currentPage - 2);
+        let e = Math.min(totalPages, s + 4);
+        s = Math.max(1, e - 4);
+        for (let i = s; i <= e; i++) {
+            const b = document.createElement('button');
+            b.className = `pg-btn${i === currentPage ? ' active' : ''}`;
+            b.textContent = i;
+            b.addEventListener('click', () => { currentPage = i; renderPage(); });
+            ctrl.appendChild(b);
+        }
+
+        const next = document.createElement('button');
+        next.className = 'pg-btn pg-arrow';
+        next.innerHTML = '&#8594;';
+        next.disabled = currentPage >= totalPages;
+        next.addEventListener('click', () => { currentPage++; renderPage(); });
+        ctrl.appendChild(next);
+    }
 }
 
 function applyFilters() { currentPage = 1; renderPage(); }
@@ -172,8 +196,6 @@ function showToast(type, title, message) {
 
 document.getElementById('instructorFilter').addEventListener('change', applyFilters);
 document.getElementById('statusFilter').addEventListener('change', applyFilters);
-document.getElementById('btnPrev').addEventListener('click', () => { currentPage--; renderPage(); });
-document.getElementById('btnNext').addEventListener('click', () => { currentPage++; renderPage(); });
 document.getElementById('btnExportAppointments').addEventListener('click', () => showToast('success', 'Exported', 'Appointments data exported successfully.'));
 
 renderPage();

@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="/css/login.css?v=<%= Date.now() %>">
 
 <main class="login-main">
-    <a href="/roles" class="back-btn">&#8592; Back to Roles</a>
+    <a href="/" class="back-btn">&#8592; Back to Home</a>
     
     <div class="login-container">
         <div class="login-card">
@@ -21,17 +21,6 @@
                 </p>
             </div>
             
-            <% if (error) { %>
-                <div class="alert alert-error">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                    </svg>
-                    <span><%= error %></span>
-                </div>
-            <% } %>
-            
             <form action="/admin/login" method="POST" class="login-form">
                 <div class="form-group">
                     <label for="email" class="form-label">
@@ -47,13 +36,19 @@
                             type="email" 
                             id="email" 
                             name="email" 
-                            class="form-input" 
-                            placeholder="admin@my.cspc.edu.ph"
+                            class="form-input <%= (error && error !== 'Please enter your password.') ? 'input-error' : '' %>" 
+                            placeholder="admin@cspc.edu.ph"
                             required
-                            pattern="[a-zA-Z0-9._%+\-]+@my\.cspc\.edu\.ph$"
+                            pattern="[a-zA-Z0-9._%+\-]+@cspc\.edu\.ph$"
                             title="Please use your CSPC email address"
                         >
                     </div>
+                    <% if (error && error !== 'Please enter your password.') { %>
+                        <span class="field-error">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <%= error %>
+                        </span>
+                    <% } %>
                 </div>
 
                 <div class="form-group">
@@ -70,12 +65,18 @@
                             type="password" 
                             id="password" 
                             name="password" 
-                            class="form-input" 
+                            class="form-input <%= (error === 'Please enter your password.') ? 'input-error' : '' %>" 
                             placeholder="Enter your password"
                             required
                             minlength="6"
                         >
                     </div>
+                    <% if (error === 'Please enter your password.') { %>
+                        <span class="field-error">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <%= error %>
+                        </span>
+                    <% } %>
                 </div>
                 
                 <button type="submit" class="btn-login">
@@ -94,7 +95,7 @@
                         <line x1="12" y1="16" x2="12" y2="12"></line>
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
-                    <p>For testing: admin@my.cspc.edu.ph / admin123</p>
+                    <p>For testing: admin@cspc.edu.ph / admin123</p>
                 </div>
             </div>
         </div>

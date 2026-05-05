@@ -1,336 +1,298 @@
 <%- include('../../partials/header') %>
-
 <link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
-<style>
-    /* Fixed layout - only content scrolls */
-    html, body {
-        overflow: hidden !important;
-        height: 100vh !important;
-    }
-    
-    body {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-</style>
 
 <div class="instructor-layout">
-    
-    <%- include('../../partials/instructor-sidebar', { activePage: 'dashboard', pendingCount: appointments.filter(a => a.status === 'pending').length }) %>
+  <%- include('../../partials/instructor-sidebar', { activePage: 'dashboard', pendingCount: appointments.filter(a => a.status === 'pending').length }) %>
 
-    <!-- Main Content Area -->
-    <main class="instructor-main">
-        <div class="main-container">
+  <main class="instructor-main">
+    <div class="main-container">
 
-            <!-- Page Header -->
-            <div class="page-header">
-                <div>
-                    <h1 class="page-title">Dashboard</h1>
-                    <p class="page-subtitle">Welcome back, <%= instructor.name.split(' ')[0] %>! Here's your overview for today.</p>
-                </div>
-                <div class="header-actions">
-                    <button class="btn-header-action" id="btnExportSchedule">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Export Schedule
-                    </button>
-                    <button class="btn-header-action primary" id="btnDownloadReport">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                            <rect x="6" y="14" width="12" height="8"></rect>
-                        </svg>
-                        Download Report
-                    </button>
-                </div>
-            </div>
-
-            <!-- Stats Overview -->
-            <div class="stats-overview">
-                <div class="stat-card-large pending">
-                    <div class="stat-card-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                    </div>
-                    <div class="stat-card-content">
-                        <p class="stat-card-label">Pending Requests</p>
-                        <h2 class="stat-card-value"><%= appointments.filter(a => a.status === 'pending').length %></h2>
-                        <p class="stat-card-sublabel">Awaiting your response</p>
-                    </div>
-                </div>
-
-                <div class="stat-card-large confirmed">
-                    <div class="stat-card-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
-                    </div>
-                    <div class="stat-card-content">
-                        <p class="stat-card-label">Confirmed Today</p>
-                        <h2 class="stat-card-value"><%= appointments.filter(a => a.status === 'confirmed' && a.isToday).length %></h2>
-                        <% const todayConfirmed = appointments.filter(a => a.status === 'confirmed' && a.isToday); %>
-                        <p class="stat-card-sublabel"><% if (todayConfirmed.length > 0) { %>Next at <%= todayConfirmed[0].time %><% } else { %>No appointments<% } %></p>
-                    </div>
-                </div>
-
-                <div class="stat-card-large workload">
-                    <div class="stat-card-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                    </div>
-                    <div class="stat-card-content">
-                        <p class="stat-card-label">Hours This Week</p>
-                        <h2 class="stat-card-value"><%= workloadStats.thisWeek.hoursLogged %>h</h2>
-                        <p class="stat-card-sublabel"><%= workloadStats.thisWeek.consultationsCompleted %> consultations completed</p>
-                    </div>
-                </div>
-
-                <div class="stat-card-large presence">
-                    <div class="stat-card-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                    </div>
-                    <div class="stat-card-content">
-                        <p class="stat-card-label">Current Status</p>
-                        <h2 class="stat-card-value"><%= instructor.bleStatus === 'in-room' ? 'In Room' : 'Out' %></h2>
-                        <p class="stat-card-sublabel">Last detected <%= instructor.bleLastDetected %></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main Dashboard Grid -->
-            <div class="dashboard-content-grid">
-                
-                <!-- Recent Appointment Requests -->
-                <div class="content-card">
-                    <div class="card-header">
-                        <h3 class="card-title">Recent Appointment Requests</h3>
-                        <a href="/instructor/consultations" class="card-link">View All →</a>
-                    </div>
-                    <div class="card-body">
-                        <% if (appointments.filter(a => a.status === 'pending').length === 0) { %>
-                            <div class="empty-state-card">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                </svg>
-                                <p class="empty-title">All Caught Up!</p>
-                                <p class="empty-text">No pending appointment requests</p>
-                            </div>
-                        <% } else { %>
-                            <div class="appointments-list-dashboard">
-                                <% appointments.filter(a => a.status === 'pending').slice(0, 3).forEach(apt => { %>
-                                <div class="appointment-row">
-                                    <div class="apt-row-left">
-                                        <div class="apt-avatar-xs">
-                                            <%= apt.studentName.split(' ').map(n => n[0]).join('') %>
-                                        </div>
-                                        <div class="apt-row-info">
-                                            <h4 class="apt-row-name"><%= apt.studentName %></h4>
-                                            <p class="apt-row-details">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <circle cx="12" cy="12" r="10"></circle>
-                                                    <polyline points="12 6 12 12 16 14"></polyline>
-                                                </svg>
-                                                <%= apt.date %> • <%= apt.time %>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="apt-row-actions">
-                                        <button class="btn-icon-action approve" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>" title="Approve">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                        </button>
-                                        <button class="btn-icon-action decline" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>" title="Decline">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <% }); %>
-                            </div>
-                        <% } %>
-                    </div>
-                </div>
-
-                <!-- Today's Schedule -->
-                <div class="content-card">
-                    <div class="card-header">
-                        <h3 class="card-title">Today's Schedule</h3>
-                        <a href="/instructor/schedule" class="card-link">Manage →</a>
-                    </div>
-                    <div class="card-body">
-                        <div class="schedule-list-dashboard">
-                            <% consultationSlots.filter(s => s.isToday || s.day === 'Monday').slice(0, 4).forEach(slot => { %>
-                            <div class="schedule-row">
-                                <div class="schedule-row-time">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                    </svg>
-                                    <%= slot.time %>
-                                </div>
-                                <div class="schedule-row-capacity">
-                                    <%= slot.bookedCount %>/<%= slot.maxCapacity %> booked
-                                </div>
-                                <span class="schedule-row-badge <%= slot.status %>">
-                                    <%= slot.status === 'open' ? 'Available' : 'Full' %>
-                                </span>
-                            </div>
-                            <% }); %>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Presence Activity -->
-                <div class="content-card">
-                    <div class="card-header">
-                        <h3 class="card-title">Recent Presence Activity</h3>
-                        <a href="/instructor/presence" class="card-link">View All →</a>
-                    </div>
-                    <div class="card-body">
-                        <div class="presence-list-dashboard">
-                            <% presenceLogs.slice(0, 4).forEach(log => { %>
-                            <div class="presence-row">
-                                <div class="presence-row-icon <%= log.status %>">
-                                    <% if (log.status === 'entered') { %>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                                        <polyline points="10 17 15 12 10 7"></polyline>
-                                        <line x1="15" y1="12" x2="3" y2="12"></line>
-                                    </svg>
-                                    <% } else { %>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                        <polyline points="16 17 21 12 16 7"></polyline>
-                                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                                    </svg>
-                                    <% } %>
-                                </div>
-                                <div class="presence-row-info">
-                                    <p class="presence-row-action"><%= log.status === 'entered' ? 'Entered' : 'Exited' %> <%= log.location %></p>
-                                    <p class="presence-row-time"><%= log.timestamp %><% if (log.duration) { %> • <%= log.duration %><% } %></p>
-                                </div>
-                            </div>
-                            <% }); %>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Notifications -->
-                <div class="content-card">
-                    <div class="card-header">
-                        <h3 class="card-title">Notifications</h3>
-                        <button class="btn-text-action" id="btnMarkAllRead">Mark all read</button>
-                    </div>
-                    <div class="card-body">
-                        <% if (notifications.length === 0) { %>
-                            <div class="empty-state-card">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                </svg>
-                                <p class="empty-text">No new notifications</p>
-                            </div>
-                        <% } else { %>
-                            <div class="notifications-list-dashboard">
-                                <% notifications.slice(0, 4).forEach(notif => { %>
-                                <div class="notification-row <%= notif.read ? 'read' : 'unread' %>">
-                                    <div class="notif-row-icon <%= notif.type %>">
-                                        <% if (notif.type === 'new-request') { %>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="8.5" cy="7" r="4"></circle>
-                                            <line x1="20" y1="8" x2="20" y2="14"></line>
-                                            <line x1="23" y1="11" x2="17" y2="11"></line>
-                                        </svg>
-                                        <% } else if (notif.type === 'cancellation') { %>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="15" y1="9" x2="9" y2="15"></line>
-                                            <line x1="9" y1="9" x2="15" y2="15"></line>
-                                        </svg>
-                                        <% } else if (notif.type === 'reminder') { %>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <polyline points="12 6 12 12 16 14"></polyline>
-                                        </svg>
-                                        <% } else { %>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                        </svg>
-                                        <% } %>
-                                    </div>
-                                    <div class="notif-row-content">
-                                        <p class="notif-row-message"><%= notif.message %></p>
-                                        <span class="notif-row-time"><%= notif.time %></span>
-                                    </div>
-                                    <% if (!notif.read) { %>
-                                    <span class="notif-unread-dot"></span>
-                                    <% } %>
-                                </div>
-                                <% }); %>
-                            </div>
-                        <% } %>
-                    </div>
-                </div>
-
-            </div>
-
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle">Welcome back, <%= instructor.name %> · <%= instructor.department %></p>
         </div>
-    </main>
+        <div class="header-actions">
+          <a href="/instructor/consultations" class="btn-header-action">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Appointments
+            <% if (appointments.filter(a => a.status === 'pending').length > 0) { %>
+            <span class="btn-badge"><%= appointments.filter(a => a.status === 'pending').length %></span>
+            <% } %>
+          </a>
+          <a href="/instructor/workload" class="btn-header-action primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            My Workload
+          </a>
+        </div>
+      </div>
 
+      <!-- Stats Row -->
+      <div class="stats-overview">
+        <div class="stat-card-large pending">
+          <div class="stat-card-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Pending Requests</p>
+            <h2 class="stat-card-value"><%= appointments.filter(a => a.status === 'pending').length %></h2>
+            <p class="stat-card-sublabel">Awaiting your response</p>
+          </div>
+        </div>
+
+        <div class="stat-card-large confirmed">
+          <div class="stat-card-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Confirmed</p>
+            <h2 class="stat-card-value"><%= appointments.filter(a => a.status === 'confirmed').length %></h2>
+            <p class="stat-card-sublabel">Total confirmed bookings</p>
+          </div>
+        </div>
+
+        <div class="stat-card-large workload">
+          <div class="stat-card-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">Teaching Hours/Week</p>
+            <h2 class="stat-card-value"><%= workloadStats.thisWeek.hoursLogged %>h</h2>
+            <p class="stat-card-sublabel"><%= workloadStats.thisWeek.consultationsCompleted %> consultations done</p>
+          </div>
+        </div>
+
+        <div class="stat-card-large presence">
+          <div class="stat-card-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div class="stat-card-content">
+            <p class="stat-card-label">BLE Status</p>
+            <h2 class="stat-card-value ble-val <%= instructor.bleStatus %>"><%= instructor.bleStatus === 'in-room' ? 'In Room' : 'Out' %></h2>
+            <p class="stat-card-sublabel">Last seen <%= instructor.bleLastDetected %></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Grid -->
+      <div class="dashboard-content-grid">
+
+        <!-- Pending Requests — most actionable -->
+        <div class="content-card span-1">
+          <div class="card-header">
+            <h3 class="card-title">
+              Pending Requests
+              <% if (appointments.filter(a => a.status === 'pending').length > 0) { %>
+              <span class="card-count-badge"><%= appointments.filter(a => a.status === 'pending').length %></span>
+              <% } %>
+            </h3>
+            <a href="/instructor/consultations" class="card-link">View All →</a>
+          </div>
+          <div class="card-body">
+            <% const pending = appointments.filter(a => a.status === 'pending'); %>
+            <% if (pending.length === 0) { %>
+            <div class="empty-state-card">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <p class="empty-title">All caught up!</p>
+              <p class="empty-text">No pending consultation requests</p>
+            </div>
+            <% } else { %>
+            <div class="appointments-list-dashboard">
+              <% pending.slice(0, 4).forEach(apt => { %>
+              <div class="appointment-row">
+                <div class="apt-avatar-xs"><%= apt.studentName.split(' ').map(n => n[0]).join('') %></div>
+                <div class="apt-row-info">
+                  <h4 class="apt-row-name"><%= apt.studentName %></h4>
+                  <p class="apt-row-details">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <%= apt.date %> · <%= apt.time %>
+                    <% if (apt.topic) { %> · <em><%= apt.topic %></em><% } %>
+                  </p>
+                </div>
+                <div class="apt-row-actions">
+                  <button class="btn-icon-action approve" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>" title="Approve">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  </button>
+                  <button class="btn-icon-action decline" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>" title="Decline">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+              </div>
+              <% }); %>
+              <% if (pending.length > 4) { %>
+              <a href="/instructor/consultations?status=pending" class="view-more-link">+<%= pending.length - 4 %> more pending →</a>
+              <% } %>
+            </div>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Consultation Schedule -->
+        <div class="content-card span-1">
+          <div class="card-header">
+            <h3 class="card-title">Consultation Schedule</h3>
+            <a href="/instructor/schedule" class="card-link">Manage →</a>
+          </div>
+          <div class="card-body">
+            <% if (consultationSlots.length === 0) { %>
+            <div class="empty-state-card">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <p class="empty-title">No slots set</p>
+              <p class="empty-text"><a href="/instructor/schedule" style="color:var(--primary-blue)">Set up your consultation hours</a></p>
+            </div>
+            <% } else { %>
+            <div class="schedule-list-dashboard">
+              <% consultationSlots.forEach(slot => { %>
+              <div class="schedule-row">
+                <div class="schedule-day-pill"><%= slot.day.substring(0,3).toUpperCase() %></div>
+                <div class="schedule-row-time">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <%= slot.time %>
+                </div>
+                <div class="schedule-row-capacity"><%= slot.bookedCount %>/<%= slot.maxCapacity %> booked</div>
+                <span class="schedule-row-badge <%= slot.status %>"><%= slot.status === 'open' ? 'Open' : 'Full' %></span>
+              </div>
+              <% }); %>
+            </div>
+            <% } %>
+
+            <!-- Quick stats below slots -->
+            <div class="schedule-quick-stats">
+              <div class="sqs-item">
+                <span class="sqs-val"><%= appointments.filter(a => a.status === 'confirmed').length %></span>
+                <span class="sqs-lbl">Confirmed</span>
+              </div>
+              <div class="sqs-divider"></div>
+              <div class="sqs-item">
+                <span class="sqs-val"><%= appointments.filter(a => a.status === 'declined').length %></span>
+                <span class="sqs-lbl">Declined</span>
+              </div>
+              <div class="sqs-divider"></div>
+              <div class="sqs-item">
+                <span class="sqs-val"><%= appointments.length %></span>
+                <span class="sqs-lbl">Total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workload Snapshot -->
+        <div class="content-card span-1">
+          <div class="card-header">
+            <h3 class="card-title">Workload Snapshot</h3>
+            <a href="/instructor/workload" class="card-link">Full Timetable →</a>
+          </div>
+          <div class="card-body">
+            <div class="workload-snapshot" id="workloadSnapshot">
+              <div class="wl-loading">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                Loading timetable...
+              </div>
+            </div>
+            <div class="workload-mini-stats">
+              <div class="wms-item blue">
+                <span class="wms-val" id="wmsBlocks">—</span>
+                <span class="wms-lbl">Blocks</span>
+              </div>
+              <div class="wms-item green">
+                <span class="wms-val" id="wmsHours">—</span>
+                <span class="wms-lbl">Hours/Week</span>
+              </div>
+              <div class="wms-item purple">
+                <span class="wms-val" id="wmsSubjects">—</span>
+                <span class="wms-lbl">Subjects</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Presence + Notifications -->
+        <div class="content-card span-1">
+          <div class="card-header">
+            <h3 class="card-title">Activity Feed</h3>
+            <a href="/instructor/presence" class="card-link">Presence Logs →</a>
+          </div>
+          <div class="card-body" style="padding:0">
+
+            <!-- Presence section -->
+            <div class="feed-section-label">Recent Presence</div>
+            <div class="presence-list-dashboard">
+              <% presenceLogs.slice(0, 3).forEach(log => { %>
+              <div class="presence-row">
+                <div class="presence-row-icon <%= log.status %>">
+                  <% if (log.status === 'entered') { %>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                  <% } else { %>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  <% } %>
+                </div>
+                <div class="presence-row-info">
+                  <p class="presence-row-action"><%= log.status === 'entered' ? 'Entered' : 'Exited' %> <%= log.location %></p>
+                  <p class="presence-row-time"><%= log.timestamp %><% if (log.duration) { %> · <%= log.duration %><% } %></p>
+                </div>
+              </div>
+              <% }); %>
+            </div>
+
+            <!-- Notifications section -->
+            <div class="feed-section-label" style="margin-top:.25rem">
+              Notifications
+              <button class="btn-text-action" id="btnMarkAllRead" style="margin-left:auto">Mark all read</button>
+              <button class="btn-text-action" id="btnViewAllNotif" style="color:var(--primary-blue)">View all →</button>
+            </div>
+            <div class="notifications-list-dashboard">
+              <% notifications.slice(0, 3).forEach(notif => { %>
+              <div class="notification-row <%= notif.read ? 'read' : 'unread' %>">
+                <div class="notif-row-icon <%= notif.type %>">
+                  <% if (notif.type === 'new-request') { %>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                  <% } else if (notif.type === 'cancellation') { %>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  <% } else { %>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <% } %>
+                </div>
+                <div class="notif-row-content">
+                  <p class="notif-row-message"><%= notif.message %></p>
+                  <span class="notif-row-time"><%= notif.time %></span>
+                </div>
+                <% if (!notif.read) { %><span class="notif-unread-dot"></span><% } %>
+              </div>
+              <% }); %>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /dashboard-content-grid -->
+    </div>
+  </main>
 </div>
 
 <!-- Decline Modal -->
 <div class="modal-overlay" id="declineModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Decline Appointment Request</h3>
-            <button class="modal-close" id="closeModal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-        <div class="modal-body">
-            <p class="modal-description">Please provide a reason for declining <strong id="declineStudentName"></strong>'s appointment request. The student will be notified via email.</p>
-            <label class="modal-label">Reason for Declining</label>
-            <textarea id="declineReason" class="modal-textarea" placeholder="e.g., Schedule conflict, Already fully booked for that time slot..." rows="4"></textarea>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-modal btn-cancel" id="cancelDecline">Cancel</button>
-            <button class="btn-modal btn-confirm" id="confirmDecline">Decline & Notify Student</button>
-        </div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Decline Appointment</h3>
+      <button class="modal-close" id="closeModal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
+    <div class="modal-body">
+      <p class="modal-description">Provide a reason for declining <strong id="declineStudentName"></strong>'s request. They'll be notified.</p>
+      <label class="modal-label">Reason</label>
+      <textarea id="declineReason" class="modal-textarea" placeholder="e.g. Schedule conflict, already fully booked..." rows="4"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal btn-cancel" id="cancelDecline">Cancel</button>
+      <button class="btn-modal btn-confirm" id="confirmDecline">Decline & Notify</button>
+    </div>
+  </div>
 </div>
 
-<!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
-    </main>
-
-</div>
-
-<%- include('../../partials/footer') %>
 <%- include('../../partials/script') %>
-
 <script src="/js/instructor-dashboard.js?v=<%= Date.now() %>"></script>
+<%- include('../../partials/footer') %>

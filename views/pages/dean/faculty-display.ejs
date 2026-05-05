@@ -1,0 +1,168 @@
+<%- include('../../partials/header') %>
+    <link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
+    <style>
+        html,
+        body {
+            overflow: hidden !important;
+            height: 100vh !important;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+
+    <div class="rooms-container">
+        <% const rooms=[...new Set(faculty.map(f=> f.officeRoom))];
+
+            // Calculate time spent today per faculty from presenceLogs
+            function calcTimeToday(facultyName) {
+            const logs = presenceLogs.filter(l => l.facultyName === facultyName);
+            let totalMinutes = 0;
+            let enterTime = null;
+
+            logs.forEach(log => {
+            if (log.status === 'entered') {
+            enterTime = log.timestamp;
+            } else if (log.status === 'exited' && log.duration) {
+            // Parse duration string e.g. "2h 15m"
+            const match = log.duration.match(/(?:(\d+)h)?\s*(?:(\d+)m)?/);
+            if (match) {
+            const hours = parseInt(match[1] || 0);
+            const minutes = parseInt(match[2] || 0);
+            totalMinutes += (hours * 60) + minutes;
+            }
+            enterTime = null;
+            }
+            });
+
+            // If currently in room (entered but not exited), count ongoing time
+            if (enterTime) {
+            totalMinutes += 30; // placeholder for "currently in room"
+            }
+
+            if (totalMinutes === 0) return null;
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            return h > 0 ? `${h}h ${m}m` : `${m}m`;
+            }
+
+            function getInitials(name) {
+            return name.split(' ')
+            .filter(w => w.length > 0)
+            .slice(0, 2)
+            .map(w => w[0].toUpperCase())
+            .join('');
+            }
+            %>
+
+            <div class="rooms-header">
+                <h2 class="rooms-title">Room Presence</h2>
+                <span class="rooms-subtitle">Live faculty monitoring</span>
+            </div>
+
+            <div class="rooms-grid">
+                <% rooms.forEach(function(room) { %>
+                    <% const roomFaculty=faculty.filter(f=> f.officeRoom === room);
+                        const presentCount = roomFaculty.filter(f => f.bleStatus === 'in-room').length;
+                        %>
+
+                        <div class="room-card">
+
+                            <!-- Room Header -->
+                            <div class="room-card-header">
+                                <div class="room-icon-wrap">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
+                                    </svg>
+                                </div>
+                                <div class="room-info">
+                                    <span class="room-name">
+                                        <%= room %>
+                                    </span>
+                                    <span class="room-count">
+                                        <%= presentCount %> of <%= roomFaculty.length %> present
+                                    </span>
+                                </div>
+                                <span
+                                    class="room-status-badge <%= presentCount > 0 ? 'badge-active' : 'badge-empty' %>">
+                                    <%= presentCount> 0 ? 'Occupied' : 'Empty' %>
+                                </span>
+                            </div>
+
+                            <!-- Faculty List -->
+                            <div class="room-faculty-list">
+                                <% roomFaculty.forEach(function(f) { %>
+                                    <% const isIn=f.bleStatus==='in-room' ; const timeToday=calcTimeToday(f.name); const
+                                        initials=getInitials(f.name); %>
+
+                                        <div class="faculty-row <%= isIn ? 'faculty-row--in' : 'faculty-row--out' %>">
+
+                                            <!-- Avatar -->
+                                            <div class="faculty-avatar">
+                                                <span class="faculty-initials">
+                                                    <%= initials %>
+                                                </span>
+                                                <span
+                                                    class="faculty-status-dot <%= isIn ? 'dot-in' : 'dot-out' %>"></span>
+                                            </div>
+
+                                            <!-- Info -->
+                                            <div class="faculty-details">
+                                                <span class="faculty-name">
+                                                    <%= f.name %>
+                                                </span>
+                                                <span class="faculty-position">
+                                                    <%= f.position %>
+                                                </span>
+                                            </div>
+
+                                            <!-- Time + Status -->
+                                            <div class="faculty-meta">
+                                                <% if (isIn) { %>
+                                                    <span class="meta-status meta-in">In room</span>
+                                                    <% } else { %>
+                                                        <span class="meta-status meta-out">Out</span>
+                                                        <% } %>
+                                                            <% if (timeToday) { %>
+                                                                <span class="meta-time">
+                                                                    <svg width="11" height="11" viewBox="0 0 24 24"
+                                                                        fill="none" stroke="currentColor"
+                                                                        stroke-width="2.5">
+                                                                        <circle cx="12" cy="12" r="10" />
+                                                                        <path d="M12 6v6l4 2" />
+                                                                    </svg>
+                                                                    <%= timeToday %> today
+                                                                </span>
+                                                                <% } else { %>
+                                                                    <span class="meta-time meta-time--none">No
+                                                                        activity
+                                                                        today</span>
+                                                                    <% } %>
+                                                                        <span class="meta-last">Last: <%=
+                                                                                f.bleLastDetected %></span>
+                                            </div>
+
+                                        </div>
+                                        <% }); %>
+                            </div>
+
+                        </div>
+                        <% }); %>
+            </div>
+
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <%- include('../../partials/footer') %>
+        <%- include('../../partials/script') %>

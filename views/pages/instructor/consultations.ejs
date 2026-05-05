@@ -1,9 +1,50 @@
 <%- include('../../partials/header') %>
 <link rel="stylesheet" href="/css/instructor/dashboard.css?v=<%= Date.now() %>">
 <style>
-    html, body { overflow: hidden !important; height: 100vh !important; }
-    body { display: flex; flex-direction: column; }
-    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* ── Decline modal calendar ── */
+.decline-cal-wrap { margin-top:1rem; border:1px solid var(--gray-200); border-radius:var(--radius-md); overflow:hidden; }
+.decline-cal-header { display:flex; align-items:center; justify-content:space-between; padding:.625rem 1rem; background:var(--gray-50); border-bottom:1px solid var(--gray-200); }
+.decline-cal-title { font-size:.8125rem; font-weight:700; color:var(--gray-700); }
+.decline-cal-nav { display:flex; gap:.25rem; }
+.decline-cal-nav button { width:24px; height:24px; border:1px solid var(--gray-200); border-radius:4px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--gray-500); font-size:.75rem; }
+.decline-cal-nav button:hover { border-color:var(--primary-blue); color:var(--primary-blue); }
+.decline-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); padding:.5rem; gap:2px; }
+.dcal-lbl { text-align:center; font-size:.625rem; font-weight:700; color:var(--gray-400); text-transform:uppercase; padding:.25rem 0; }
+.dcal-cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:.75rem; color:var(--gray-400); border-radius:4px; }
+.dcal-cell.other { color:var(--gray-300); }
+.dcal-cell.today { font-weight:700; color:var(--primary-blue); }
+.dcal-cell.avail { background:rgba(34,197,94,.15); color:#15803d; font-weight:700; cursor:default; }
+.dcal-cell.avail:hover { background:rgba(34,197,94,.25); }
+.decline-cal-legend { padding:.375rem .75rem; font-size:.6875rem; color:var(--gray-500); display:flex; align-items:center; gap:.375rem; border-top:1px solid var(--gray-100); }
+.decline-cal-legend-dot { width:8px; height:8px; border-radius:2px; background:rgba(34,197,94,.4); }
+
+/* ── View Details Modal ── */
+.view-detail-row { display:flex; gap:.5rem; margin-bottom:.75rem; align-items:flex-start; }
+.view-detail-label { font-size:.75rem; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:.4px; min-width:90px; flex-shrink:0; padding-top:1px; }
+.view-detail-value { font-size:.875rem; color:var(--gray-800); line-height:1.5; }
+.view-detail-divider { border:none; border-top:1px solid var(--gray-100); margin:.875rem 0; }
+.view-student-header { display:flex; align-items:center; gap:.875rem; margin-bottom:1.25rem; padding-bottom:1rem; border-bottom:1px solid var(--gray-100); }
+.view-student-avatar { width:44px; height:44px; border-radius:50%; background:var(--primary-blue); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.9375rem; flex-shrink:0; }
+
+/* ── Pagination ── */
+.pagination-wrap { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; border-top:1px solid var(--gray-100); flex-wrap:wrap; gap:.75rem; }
+.pagination-info { font-size:.8125rem; color:var(--gray-500); }
+.pagination-controls { display:flex; align-items:center; gap:.375rem; }
+.pg-btn { width:34px; height:34px; border:1.5px solid var(--gray-200); border-radius:var(--radius-md); background:#fff; color:var(--gray-600); font-size:.8125rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .18s; font-family:var(--font-body); }
+.pg-btn:hover:not(:disabled) { border-color:var(--primary-blue); color:var(--primary-blue); background:rgba(10,61,98,.04); }
+.pg-btn:disabled { opacity:.4; cursor:not-allowed; }
+.pg-btn.active { background:var(--primary-blue); color:#fff; border-color:var(--primary-blue); }
+.pg-btn.pg-arrow { font-size:1rem; }
+
+/* ── View button on card ── */
+.btn-view-consult { display:inline-flex; align-items:center; gap:.35rem; padding:.4rem .75rem; border:1.5px solid var(--gray-200); border-radius:var(--radius-md); background:#fff; color:var(--gray-600); font-size:.75rem; font-weight:600; cursor:pointer; transition:all .18s; font-family:var(--font-body); }
+.btn-view-consult:hover { border-color:var(--primary-blue); color:var(--primary-blue); background:rgba(10,61,98,.04); }
+@media (max-width: 640px) {
+    .view-detail-row { flex-direction:column; gap:.25rem; }
+    .view-detail-label { min-width:0; }
+    .view-student-header { align-items:flex-start; }
+    .pagination-wrap { flex-direction:column; align-items:flex-start; }
+}
 </style>
 
 <div class="instructor-layout">
@@ -14,7 +55,7 @@
 
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Consultations</h1>
+                    <h1 class="page-title">Appointments</h1>
                     <p class="page-subtitle">Manage all appointment requests from students</p>
                 </div>
                 <div class="header-actions">
@@ -27,62 +68,123 @@
                 </div>
             </div>
 
-            <div class="consultations-list" id="consultationsList">
-                <% appointments.forEach(apt => { %>
-                <div class="consultation-card" data-status="<%= apt.status %>">
-                    <div class="consult-card-left">
-                        <div class="apt-avatar-xs"><%= apt.studentName.split(' ').map(n=>n[0]).join('') %></div>
-                    </div>
-                    <div class="consult-card-body">
-                        <div class="consult-card-top">
-                            <div>
-                                <h4 class="consult-student-name"><%= apt.studentName %></h4>
-                                <p class="consult-student-id"><%= apt.studentId %></p>
+            <!-- Consultations List wrapped in a card for pagination footer -->
+            <div class="content-card" style="padding:0;">
+                <div class="consultations-list" id="consultationsList" style="padding:.75rem;">
+                    <% appointments.forEach((apt, idx) => { %>
+                    <div class="consultation-card" data-status="<%= apt.status %>" data-index="<%= idx %>"
+                         data-student="<%= apt.studentName %>" data-studentid="<%= apt.studentId %>"
+                         data-date="<%= apt.date %>" data-time="<%= apt.time %>" data-duration="<%= apt.duration %>"
+                         data-topic="<%= apt.topic %>" data-requested="<%= apt.requestedAt %>" data-id="<%= apt.id %>">
+                        <div class="consult-card-left">
+                            <div class="apt-avatar-xs"><%= apt.studentName.split(' ').map(n=>n[0]).join('') %></div>
+                        </div>
+                        <div class="consult-card-body">
+                            <div class="consult-card-top">
+                                <div>
+                                    <h4 class="consult-student-name"><%= apt.studentName %></h4>
+                                    <p class="consult-student-id"><%= apt.studentId %></p>
+                                </div>
+                                <span class="consult-status-badge <%= apt.status %>">
+                                    <%= apt.status.charAt(0).toUpperCase() + apt.status.slice(1) %>
+                                </span>
                             </div>
-                            <span class="consult-status-badge <%= apt.status %>">
-                                <%= apt.status.charAt(0).toUpperCase() + apt.status.slice(1) %>
-                            </span>
+                            <p class="consult-topic"><%= apt.topic %></p>
+                            <div class="consult-meta">
+                                <span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    <%= apt.date %>
+                                </span>
+                                <span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    <%= apt.time %> · <%= apt.duration %>
+                                </span>
+                                <span class="consult-requested">Requested <%= apt.requestedAt %></span>
+                            </div>
                         </div>
-                        <p class="consult-topic"><%= apt.topic %></p>
-                        <div class="consult-meta">
-                            <span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                <%= apt.date %>
-                            </span>
-                            <span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <%= apt.time %> · <%= apt.duration %>
-                            </span>
-                            <span class="consult-requested">Requested <%= apt.requestedAt %></span>
+                        <div class="consult-card-actions" style="display:flex;flex-direction:column;gap:.4rem;align-items:flex-end;">
+                            <!-- View Details button always visible -->
+                            <button class="btn-view-consult btn-view-details" data-index="<%= idx %>">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                View
+                            </button>
+                            <% if (apt.status === 'pending') { %>
+                            <button class="btn-approve-full" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                Approve
+                            </button>
+                            <button class="btn-decline-full" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                Decline
+                            </button>
+                            <% } %>
                         </div>
                     </div>
-                    <% if (apt.status === 'pending') { %>
-                    <div class="consult-card-actions">
-                        <button class="btn-approve-full" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            Approve
-                        </button>
-                        <button class="btn-decline-full" data-id="<%= apt.id %>" data-student="<%= apt.studentName %>">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            Decline
-                        </button>
-                        <button class="btn-reschedule-full" data-id="<%= apt.id %>">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                            Reschedule
-                        </button>
-                    </div>
-                    <% } %>
+                    <% }); %>
                 </div>
-                <% }); %>
+
+                <!-- Pagination Footer -->
+                <div class="pagination-wrap" id="paginationWrap">
+                    <span class="pagination-info" id="paginationInfo"></span>
+                    <div class="pagination-controls" id="paginationControls"></div>
+                </div>
             </div>
 
         </div>
     </main>
 </div>
 
-<!-- Decline Modal -->
+<!-- View Details Modal -->
+<div class="modal-overlay" id="viewModal">
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Appointment Details</h3>
+            <button class="modal-close" id="closeViewModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Student header -->
+            <div class="view-student-header">
+                <div class="view-student-avatar" id="viewAvatar"></div>
+                <div>
+                    <p style="font-weight:700;font-size:.9375rem;color:var(--gray-900);margin:0 0 .125rem;" id="viewStudentName"></p>
+                    <p style="font-size:.8125rem;color:var(--gray-500);margin:0;" id="viewStudentId"></p>
+                </div>
+                <span class="consult-status-badge" id="viewStatusBadge" style="margin-left:auto;flex-shrink:0;"></span>
+            </div>
+            <!-- Details -->
+            <div class="view-detail-row">
+                <span class="view-detail-label">Date</span>
+                <span class="view-detail-value" id="viewDate"></span>
+            </div>
+            <div class="view-detail-row">
+                <span class="view-detail-label">Time</span>
+                <span class="view-detail-value" id="viewTime"></span>
+            </div>
+            <div class="view-detail-row">
+                <span class="view-detail-label">Duration</span>
+                <span class="view-detail-value" id="viewDuration"></span>
+            </div>
+            <hr class="view-detail-divider">
+            <div class="view-detail-row">
+                <span class="view-detail-label">Topic</span>
+                <span class="view-detail-value" id="viewTopic"></span>
+            </div>
+            <div class="view-detail-row">
+                <span class="view-detail-label">Requested</span>
+                <span class="view-detail-value" id="viewRequested"></span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal btn-cancel" id="cancelView">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Decline Modal with next-week calendar -->
 <div class="modal-overlay" id="declineModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width:480px;">
         <div class="modal-header">
             <h3 class="modal-title">Decline Appointment</h3>
             <button class="modal-close" id="closeModal">
@@ -92,7 +194,21 @@
         <div class="modal-body">
             <p class="modal-description">Provide a reason for declining <strong id="declineStudentName"></strong>'s request. They will be notified via email.</p>
             <label class="modal-label">Reason</label>
-            <textarea id="declineReason" class="modal-textarea" placeholder="e.g., Schedule conflict, already fully booked..." rows="4"></textarea>
+            <textarea id="declineReason" class="modal-textarea" placeholder="e.g., Schedule conflict, already fully booked..." rows="3"></textarea>
+            <div class="decline-cal-wrap">
+                <div class="decline-cal-header">
+                    <span class="decline-cal-title">Your Available Schedule — Next Week</span>
+                    <div class="decline-cal-nav">
+                        <button id="dcalPrev">&#8592;</button>
+                        <button id="dcalNext">&#8594;</button>
+                    </div>
+                </div>
+                <div class="decline-cal-grid" id="dcalGrid"></div>
+                <div class="decline-cal-legend">
+                    <div class="decline-cal-legend-dot"></div>
+                    Available consultation day
+                </div>
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn-modal btn-cancel" id="cancelDecline">Cancel</button>
@@ -102,24 +218,142 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
-
 <%- include('../../partials/footer') %>
 <%- include('../../partials/script') %>
 <script src="/js/instructor-dashboard.js?v=<%= Date.now() %>"></script>
 <script>
-// Filter tabs
+const consultSlots = <%- JSON.stringify(consultationSlots) %>;
+const availDays = consultSlots.filter(s => s.status === 'open').map(s => s.day);
+const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// ── Pagination ──
+const ITEMS_PER_PAGE = 5;
+let currentPage = 1;
+let currentFilter = 'all';
+
+function getVisibleCards() {
+    return Array.from(document.querySelectorAll('.consultation-card')).filter(c =>
+        currentFilter === 'all' || c.dataset.status === currentFilter
+    );
+}
+
+function renderPage() {
+    const cards = getVisibleCards();
+    const total = cards.length;
+    const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+    currentPage = Math.min(currentPage, totalPages);
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+
+    // Show/hide all cards
+    document.querySelectorAll('.consultation-card').forEach(c => c.style.display = 'none');
+    cards.forEach((c, i) => { c.style.display = (i >= start && i < end) ? 'flex' : 'none'; });
+
+    // Pagination info
+    const showing = Math.min(end, total) - start;
+    document.getElementById('paginationInfo').textContent =
+        total === 0 ? 'No consultations found' :
+        `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
+
+    // Pagination controls
+    const ctrl = document.getElementById('paginationControls');
+    ctrl.innerHTML = '';
+    if (totalPages <= 1) return;
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'pg-btn pg-arrow';
+    prevBtn.innerHTML = '&#8592;';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.addEventListener('click', () => { currentPage--; renderPage(); });
+    ctrl.appendChild(prevBtn);
+
+    // Page number buttons (show up to 5)
+    const range = [];
+    let s = Math.max(1, currentPage - 2);
+    let e = Math.min(totalPages, s + 4);
+    s = Math.max(1, e - 4);
+    for (let i = s; i <= e; i++) range.push(i);
+
+    range.forEach(p => {
+        const btn = document.createElement('button');
+        btn.className = 'pg-btn' + (p === currentPage ? ' active' : '');
+        btn.textContent = p;
+        btn.addEventListener('click', () => { currentPage = p; renderPage(); });
+        ctrl.appendChild(btn);
+    });
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'pg-btn pg-arrow';
+    nextBtn.innerHTML = '&#8594;';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.addEventListener('click', () => { currentPage++; renderPage(); });
+    ctrl.appendChild(nextBtn);
+}
+
+// ── Filter tabs ──
 document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.addEventListener('click', function() {
         document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
         this.classList.add('active');
-        const filter = this.dataset.filter;
-        document.querySelectorAll('.consultation-card').forEach(card => {
-            card.style.display = (filter === 'all' || card.dataset.status === filter) ? 'flex' : 'none';
-        });
+        currentFilter = this.dataset.filter;
+        currentPage = 1;
+        renderPage();
     });
 });
 
-// Approve
+// ── View Details ──
+document.querySelectorAll('.btn-view-details').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const card = this.closest('.consultation-card');
+        const name = card.dataset.student;
+        const initials = name.split(' ').map(n => n[0]).join('');
+        document.getElementById('viewAvatar').textContent = initials;
+        document.getElementById('viewStudentName').textContent = name;
+        document.getElementById('viewStudentId').textContent = card.dataset.studentid;
+        document.getElementById('viewDate').textContent = card.dataset.date;
+        document.getElementById('viewTime').textContent = card.dataset.time;
+        document.getElementById('viewDuration').textContent = card.dataset.duration;
+        document.getElementById('viewTopic').textContent = card.dataset.topic;
+        document.getElementById('viewRequested').textContent = 'Requested ' + card.dataset.requested;
+        const status = card.dataset.status;
+        const badge = document.getElementById('viewStatusBadge');
+        badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        badge.className = 'consult-status-badge ' + status;
+        document.getElementById('viewModal').classList.add('show');
+    });
+});
+document.getElementById('closeViewModal').addEventListener('click', () => document.getElementById('viewModal').classList.remove('show'));
+document.getElementById('cancelView').addEventListener('click', () => document.getElementById('viewModal').classList.remove('show'));
+
+// ── Decline calendar ──
+let dcalOffset = 0;
+function renderDeclineCal() {
+    const grid = document.getElementById('dcalGrid');
+    grid.innerHTML = '';
+    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+        const lbl = document.createElement('div');
+        lbl.className = 'dcal-lbl';
+        lbl.textContent = d;
+        grid.appendChild(lbl);
+    });
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay() + (dcalOffset + 1) * 7);
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStart);
+        d.setDate(weekStart.getDate() + i);
+        const cell = document.createElement('div');
+        cell.className = 'dcal-cell';
+        cell.textContent = d.getDate();
+        if (d.toDateString() === today.toDateString()) cell.classList.add('today');
+        if (availDays.includes(dayNames[d.getDay()])) cell.classList.add('avail');
+        grid.appendChild(cell);
+    }
+}
+document.getElementById('dcalPrev').addEventListener('click', () => { dcalOffset = Math.max(0, dcalOffset - 1); renderDeclineCal(); });
+document.getElementById('dcalNext').addEventListener('click', () => { dcalOffset++; renderDeclineCal(); });
+
+// ── Approve ──
 document.querySelectorAll('.btn-approve-full').forEach(btn => {
     btn.addEventListener('click', function() {
         const student = this.dataset.student;
@@ -127,22 +361,24 @@ document.querySelectorAll('.btn-approve-full').forEach(btn => {
         card.querySelector('.consult-status-badge').textContent = 'Confirmed';
         card.querySelector('.consult-status-badge').className = 'consult-status-badge confirmed';
         card.dataset.status = 'confirmed';
-        card.querySelector('.consult-card-actions').remove();
+        this.closest('.consult-card-actions').querySelectorAll('.btn-approve-full,.btn-decline-full').forEach(b => b.remove());
+        renderPage();
         showToast('success', 'Approved', `${student}'s appointment has been confirmed.`);
     });
 });
 
-// Decline
+// ── Decline ──
 let currentStudent = null;
 document.querySelectorAll('.btn-decline-full').forEach(btn => {
     btn.addEventListener('click', function() {
         currentStudent = { name: this.dataset.student, card: this.closest('.consultation-card') };
         document.getElementById('declineStudentName').textContent = this.dataset.student;
         document.getElementById('declineReason').value = '';
+        dcalOffset = 0;
+        renderDeclineCal();
         document.getElementById('declineModal').classList.add('show');
     });
 });
-
 document.getElementById('closeModal').addEventListener('click', () => document.getElementById('declineModal').classList.remove('show'));
 document.getElementById('cancelDecline').addEventListener('click', () => document.getElementById('declineModal').classList.remove('show'));
 document.getElementById('confirmDecline').addEventListener('click', () => {
@@ -154,7 +390,8 @@ document.getElementById('confirmDecline').addEventListener('click', () => {
         currentStudent.card.querySelector('.consult-status-badge').textContent = 'Declined';
         currentStudent.card.querySelector('.consult-status-badge').className = 'consult-status-badge declined';
         currentStudent.card.dataset.status = 'declined';
-        currentStudent.card.querySelector('.consult-card-actions').remove();
+        currentStudent.card.querySelectorAll('.btn-approve-full,.btn-decline-full').forEach(b => b.remove());
+        renderPage();
         showToast('success', 'Declined', `${currentStudent.name} has been notified.`);
     }
     document.getElementById('declineModal').classList.remove('show');
@@ -168,4 +405,7 @@ function showToast(type, title, message) {
     c.appendChild(t);
     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
 }
+
+// Init
+renderPage();
 </script>

@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
 
+// Router-level middleware: log all dean route requests
+router.use((req, res, next) => {
+    console.log(`[Dean Router] ${req.method} ${req.originalUrl}`);
+    next();
+});
+
 // Dean Login page
 router.get('/login', (req, res) => {
     res.render('pages/dean/login', { 
@@ -12,13 +18,31 @@ router.get('/login', (req, res) => {
 // Dean Login POST handler
 router.post('/login', (req, res) => {
     const { email, password } = req.body;
+    
+    // Input validation
+    if (!email || typeof email !== 'string' || email.trim().length === 0) {
+        return res.render('pages/dean/login', { 
+            title: 'FaciTrack - Dean Login',
+            error: 'Please enter your email address.' 
+        });
+    }
+    
+    if (!password || typeof password !== 'string' || password.length === 0) {
+        return res.render('pages/dean/login', { 
+            title: 'FaciTrack - Dean Login',
+            error: 'Please enter your password.' 
+        });
+    }
+    
     const deans = [
-        { email: 'dean@my.cspc.edu.ph', password: 'dean123' }
+        { email: 'dean@cspc.edu.ph', password: 'dean123' }
     ];
+    
     const dean = deans.find(d => 
-        d.email.toLowerCase() === email.toLowerCase() && 
+        d.email.toLowerCase() === email.trim().toLowerCase() && 
         d.password === password
     );
+    
     if (dean) {
         res.redirect('/dean/dashboard');
     } else {
@@ -33,7 +57,7 @@ router.post('/login', (req, res) => {
 function getSharedData() {
     const dean = {
         name: 'Dr. Lourdes Reyes',
-        email: 'dean@my.cspc.edu.ph',
+        email: 'dean@cspc.edu.ph',
         position: 'Dean',
         department: 'College of Computer Studies'
     };
@@ -161,20 +185,26 @@ function getSharedData() {
         }
     ];
 
+    // Generate dates relative to today so period filters (This Week / This Month) work
+    function relDate(offsetDays) {
+        const d = new Date();
+        d.setDate(d.getDate() + offsetDays);
+        return d.toISOString().split('T')[0]; // YYYY-MM-DD for reliable Date parsing
+    }
     const allAppointments = [
-        { id: 1, studentName: 'Juan Dela Cruz', studentId: '2021-00123', instructorName: 'Dr. Maria Santos', date: 'March 24, 2026', time: '2:00 PM', duration: '30 minutes', topic: 'Thesis consultation regarding system architecture', status: 'pending', isToday: true },
-        { id: 2, studentName: 'Ana Reyes', studentId: '2021-00456', instructorName: 'Dr. Maria Santos', date: 'March 25, 2026', time: '10:00 AM', duration: '30 minutes', topic: 'Grade inquiry for Midterm exam', status: 'pending', isToday: false },
-        { id: 3, studentName: 'Carlos Mendoza', studentId: '2021-00789', instructorName: 'Dr. Maria Santos', date: 'March 24, 2026', time: '3:30 PM', duration: '45 minutes', topic: 'Project proposal review', status: 'confirmed', isToday: true },
-        { id: 4, studentName: 'Maria Garcia', studentId: '2021-00321', instructorName: 'Prof. Jose Dela Cruz', date: 'March 22, 2026', time: '1:00 PM', duration: '30 minutes', topic: 'Academic advising', status: 'declined', isToday: false },
-        { id: 5, studentName: 'Pedro Lim', studentId: '2022-00111', instructorName: 'Dr. Ana Villanueva', date: 'March 24, 2026', time: '9:00 AM', duration: '30 minutes', topic: 'Research methodology guidance', status: 'confirmed', isToday: true },
-        { id: 6, studentName: 'Rosa Fernandez', studentId: '2022-00222', instructorName: 'Prof. Carlos Bautista', date: 'March 25, 2026', time: '11:00 AM', duration: '45 minutes', topic: 'Capstone project feedback', status: 'pending', isToday: false },
-        { id: 7, studentName: 'Luis Torres', studentId: '2021-00555', instructorName: 'Dr. Ana Villanueva', date: 'March 23, 2026', time: '2:00 PM', duration: '30 minutes', topic: 'Grade reconsideration request', status: 'confirmed', isToday: false },
-        { id: 8, studentName: 'Kristine Uy', studentId: '2022-00333', instructorName: 'Dr. Ramon Aquino', date: 'March 24, 2026', time: '1:00 PM', duration: '30 minutes', topic: 'AI project consultation', status: 'confirmed', isToday: true },
-        { id: 9, studentName: 'Mark Villanueva', studentId: '2022-00444', instructorName: 'Prof. Liza Navarro', date: 'March 25, 2026', time: '2:00 PM', duration: '45 minutes', topic: 'Web app debugging session', status: 'pending', isToday: false },
-        { id: 10, studentName: 'Sheila Ramos', studentId: '2021-00666', instructorName: 'Dr. Eduardo Flores', date: 'March 24, 2026', time: '3:00 PM', duration: '30 minutes', topic: 'Network security thesis review', status: 'confirmed', isToday: true },
-        { id: 11, studentName: 'Jerome Pascual', studentId: '2022-00555', instructorName: 'Prof. Grace Mendoza', date: 'March 26, 2026', time: '10:00 AM', duration: '30 minutes', topic: 'Mobile app UI feedback', status: 'pending', isToday: false },
-        { id: 12, studentName: 'Diane Soriano', studentId: '2021-00777', instructorName: 'Dr. Benjamin Reyes', date: 'March 24, 2026', time: '11:00 AM', duration: '45 minutes', topic: 'Data science capstone guidance', status: 'confirmed', isToday: true },
-        { id: 13, studentName: 'Ryan Ocampo', studentId: '2022-00666', instructorName: 'Prof. Maricel Castro', date: 'March 25, 2026', time: '1:00 PM', duration: '30 minutes', topic: 'System design review', status: 'pending', isToday: false }
+        { id: 1,  studentName: 'Juan Dela Cruz',    studentId: '2021-00123', instructorName: 'Dr. Maria Santos',     date: relDate(0),  time: '2:00 PM',  duration: '30 minutes', topic: 'Thesis consultation regarding system architecture', status: 'pending',   isToday: true  },
+        { id: 2,  studentName: 'Ana Reyes',          studentId: '2021-00456', instructorName: 'Dr. Maria Santos',     date: relDate(1),  time: '10:00 AM', duration: '30 minutes', topic: 'Grade inquiry for Midterm exam',                    status: 'pending',   isToday: false },
+        { id: 3,  studentName: 'Carlos Mendoza',     studentId: '2021-00789', instructorName: 'Dr. Maria Santos',     date: relDate(0),  time: '3:30 PM',  duration: '45 minutes', topic: 'Project proposal review',                           status: 'confirmed', isToday: true  },
+        { id: 4,  studentName: 'Maria Garcia',       studentId: '2021-00321', instructorName: 'Prof. Jose Dela Cruz', date: relDate(-2), time: '1:00 PM',  duration: '30 minutes', topic: 'Academic advising',                                 status: 'declined',  isToday: false },
+        { id: 5,  studentName: 'Pedro Lim',          studentId: '2022-00111', instructorName: 'Dr. Ana Villanueva',   date: relDate(0),  time: '9:00 AM',  duration: '30 minutes', topic: 'Research methodology guidance',                     status: 'confirmed', isToday: true  },
+        { id: 6,  studentName: 'Rosa Fernandez',     studentId: '2022-00222', instructorName: 'Prof. Carlos Bautista',date: relDate(1),  time: '11:00 AM', duration: '45 minutes', topic: 'Capstone project feedback',                         status: 'pending',   isToday: false },
+        { id: 7,  studentName: 'Luis Torres',        studentId: '2021-00555', instructorName: 'Dr. Ana Villanueva',   date: relDate(-1), time: '2:00 PM',  duration: '30 minutes', topic: 'Grade reconsideration request',                     status: 'confirmed', isToday: false },
+        { id: 8,  studentName: 'Kristine Uy',        studentId: '2022-00333', instructorName: 'Dr. Ramon Aquino',     date: relDate(0),  time: '1:00 PM',  duration: '30 minutes', topic: 'AI project consultation',                           status: 'confirmed', isToday: true  },
+        { id: 9,  studentName: 'Mark Villanueva',    studentId: '2022-00444', instructorName: 'Prof. Liza Navarro',   date: relDate(2),  time: '2:00 PM',  duration: '45 minutes', topic: 'Web app debugging session',                         status: 'pending',   isToday: false },
+        { id: 10, studentName: 'Sheila Ramos',       studentId: '2021-00666', instructorName: 'Dr. Eduardo Flores',   date: relDate(0),  time: '3:00 PM',  duration: '30 minutes', topic: 'Network security thesis review',                    status: 'confirmed', isToday: true  },
+        { id: 11, studentName: 'Jerome Pascual',     studentId: '2022-00555', instructorName: 'Prof. Grace Mendoza',  date: relDate(3),  time: '10:00 AM', duration: '30 minutes', topic: 'Mobile app UI feedback',                            status: 'pending',   isToday: false },
+        { id: 12, studentName: 'Diane Soriano',      studentId: '2021-00777', instructorName: 'Dr. Benjamin Reyes',   date: relDate(0),  time: '11:00 AM', duration: '45 minutes', topic: 'Data science capstone guidance',                    status: 'confirmed', isToday: true  },
+        { id: 13, studentName: 'Ryan Ocampo',        studentId: '2022-00666', instructorName: 'Prof. Maricel Castro', date: relDate(1),  time: '1:00 PM',  duration: '30 minutes', topic: 'System design review',                              status: 'pending',   isToday: false }
     ];
 
     const presenceLogs = [
@@ -212,30 +242,45 @@ router.get('/dashboard', (req, res) => {
 });
 
 // Faculty list with real-time BLE status
+// Supports query parameters: ?bleStatus=in-room|out-of-room
 router.get('/faculty', (req, res) => {
     const data = getSharedData();
+    const { bleStatus } = req.query;
+
+    let filteredFaculty = data.faculty;
+    if (bleStatus) {
+        filteredFaculty = filteredFaculty.filter(f => f.bleStatus === bleStatus);
+    }
+
     res.render('pages/dean/faculty', {
         title: 'FaciTrack - Faculty',
-        ...data
+        ...data,
+        faculty: filteredFaculty,
+        filterBleStatus: bleStatus || ''
     });
 });
 
-// Presence monitoring logs
-router.get('/monitoring', (req, res) => {
-    const data = getSharedData();
-    res.render('pages/dean/monitoring', {
-        title: 'FaciTrack - Monitoring',
-        ...data
-    });
+// Add instructor (POST) — prototype: returns success JSON
+router.post('/faculty', (req, res) => {
+    const { name, position, officeRoom } = req.body;
+    if (!name || !position || !officeRoom) {
+        return res.status(400).json({ error: 'Missing required fields.' });
+    }
+    // In a real app this would persist to DB; prototype just acknowledges
+    res.json({ success: true, message: `${name} added to faculty list.` });
 });
 
-// All appointments across all faculty
-router.get('/appointments', (req, res) => {
-    const data = getSharedData();
-    res.render('pages/dean/appointments', {
-        title: 'FaciTrack - Appointments',
-        ...data
-    });
+// Delete instructor (POST with _method override or direct DELETE)
+router.post('/faculty/:id/delete', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ error: 'Invalid ID.' });
+    // In a real app this would remove from DB; prototype just acknowledges
+    res.json({ success: true, message: `Instructor #${id} removed.` });
+});
+
+// Monitoring — redirects to Faculty (merged page)
+router.get('/monitoring', (_req, res) => {
+    res.redirect('/dean/faculty');
 });
 
 // Workload reports per faculty
@@ -243,6 +288,24 @@ router.get('/reports', (req, res) => {
     const data = getSharedData();
     res.render('pages/dean/reports', {
         title: 'FaciTrack - Reports',
+        ...data
+    });
+});
+
+// Presence Logs
+router.get('/presence', (req, res) => {
+    const data = getSharedData();
+    res.render('pages/dean/presence', {
+        title: 'FaciTrack - Presence Logs',
+        ...data
+    });
+});
+
+// Settings
+router.get('/settings', (req, res) => {
+    const data = getSharedData();
+    res.render('pages/dean/settings', {
+        title: 'FaciTrack - Settings',
         ...data
     });
 });
